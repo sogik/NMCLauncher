@@ -171,11 +171,6 @@ void JavaSettingsWidget::setupUi()
                 m_verticalLayout->addSpacerItem(m_verticalSpacer);
             }
         });
-        connect(m_ui->javaPathTextBox, &QLineEdit::textChanged, [this](QString newValue) {
-            if (m_instance->settings()->get("JavaPath").toString() != newValue) {
-                m_instance->settings()->set("AutomaticJava", false);
-            }
-        });
     }
     m_verticalLayout->addWidget(m_autoJavaGroupBox);
 
