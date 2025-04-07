@@ -93,5 +93,11 @@ jobs:
 
       - name: Build release package
         if: ${{ env.DEBUG == 'false' }}
+        env:
+          TAG: ${{ github.ref_name }}
+          SYSTEM: ${{ matrix.system }}
         run: |
           nix build --print-build-logs .#prismlauncher
+          nix build --no-link --print-out-paths .#prismlauncher \
+            | tee -a "$GITHUB_STEP_SUMMARY" \
+            | xargs cachix pin prismlauncher "$TAG"-"$SYSTEM"
