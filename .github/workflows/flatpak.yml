@@ -2,22 +2,61 @@ name: Flatpak
 
 on:
   push:
-    paths-ignore:
-      - "**.md"
-      - "**/LICENSE"
-      - ".github/ISSUE_TEMPLATE/**"
-      - ".markdownlint**"
-      - "nix/**"
+    branches:
+      - "develop"
+      - "release-*"
     # We don't do anything with these artifacts on releases. They go to Flathub
     tags-ignore:
       - "*"
+    paths:
+      # File types
+      - "**.cpp"
+      - "**.h"
+      - "**.java"
+      - "**.ui"
+
+      # Build files
+      - "flatpak/**"
+
+      # Directories
+      - "buildconfig/**"
+      - "cmake/**"
+      - "launcher/**"
+      - "libraries/**"
+      - "program_info/**"
+      - "tests/**"
+
+      # Files
+      - "CMakeLists.txt"
+      - "COPYING.md"
+
+      # Workflows
+      - ".github/workflows/flatpak.yml"
   pull_request:
-    paths-ignore:
-      - "**.md"
-      - "**/LICENSE"
-      - ".github/ISSUE_TEMPLATE/**"
-      - ".markdownlint**"
-      - "nix/**"
+    paths:
+      # File types
+      - "**.cpp"
+      - "**.h"
+      - "**.java"
+      - "**.ui"
+
+      # Build files
+      - "flatpak/**"
+
+      # Directories
+      - "buildconfig/**"
+      - "cmake/**"
+      - "launcher/**"
+      - "libraries/**"
+      - "program_info/**"
+      - "tests/**"
+
+      # Files
+      - "CMakeLists.txt"
+      - "COPYING.md"
+
+      # Workflows
+      - ".github/workflows/flatpak.yml"
   workflow_dispatch:
 
 permissions:
@@ -57,6 +96,6 @@ jobs:
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: NMCLauncher-${{ runner.os }}-${{ env.VERSION }}-Flatpak.flatpak
-          manifest-path: flatpak/org.sogik.NMCLauncher.yml
+          bundle: PrismLauncher-${{ runner.os }}-${{ env.VERSION }}-Flatpak.flatpak
+          manifest-path: flatpak/org.prismlauncher.PrismLauncher.yml
           arch: ${{ matrix.arch }}

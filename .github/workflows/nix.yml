@@ -2,30 +2,64 @@ name: Nix
 
 on:
   push:
+    branches:
+      - "develop"
+      - "release-*"
     tags:
       - "*"
-    paths-ignore:
-      - ".github/**"
-      - "!.github/workflows/nix.yml"
-      - "flatpak/"
-      - "scripts/"
+    paths:
+      # File types
+      - "**.cpp"
+      - "**.h"
+      - "**.java"
+      - "**.ui"
 
-      - ".git*"
-      - ".envrc"
-      - "**.md"
-      - "!COPYING.md"
-      - "renovate.json"
+      # Build files
+      - "**.nix"
+      - "nix/**"
+      - "flake.lock"
+
+      # Directories
+      - "buildconfig/**"
+      - "cmake/**"
+      - "launcher/**"
+      - "libraries/**"
+      - "program_info/**"
+      - "tests/**"
+
+      # Files
+      - "CMakeLists.txt"
+      - "COPYING.md"
+
+      # Workflows
+      - ".github/workflows/nix.yml"
   pull_request_target:
-    paths-ignore:
-      - ".github/**"
-      - "flatpak/"
-      - "scripts/"
+    paths:
+      # File types
+      - "**.cpp"
+      - "**.h"
+      - "**.java"
+      - "**.ui"
 
-      - ".git*"
-      - ".envrc"
-      - "**.md"
-      - "!COPYING.md"
-      - "renovate.json"
+      # Build files
+      - "**.nix"
+      - "nix/**"
+      - "flake.lock"
+
+      # Directories
+      - "buildconfig/**"
+      - "cmake/**"
+      - "launcher/**"
+      - "libraries/**"
+      - "program_info/**"
+      - "tests/**"
+
+      # Files
+      - "CMakeLists.txt"
+      - "COPYING.md"
+
+      # Workflows
+      - ".github/workflows/nix.yml"
   workflow_dispatch:
 
 permissions:
@@ -61,25 +95,36 @@ jobs:
       id-token: write
 
     steps:
+      - name: Get merge commit
+        if: ${{ github.event_name == 'pull_request_target' }}
+        id: merge-commit
+        uses: PrismLauncher/PrismLauncher/.github/actions/get-merge-commit@develop
+        with:
+          pull-request-id: ${{ github.event.number }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.merge-commit.outputs.merge-commit-sha || github.sha }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v16
+        uses: DeterminateSystems/nix-installer-action@v18
         with:
           determinate: ${{ env.USE_DETERMINATE }}
 
         # For PRs
       - name: Setup Nix Magic Cache
         if: ${{ env.USE_DETERMINATE == 'true' }}
-        uses: DeterminateSystems/flakehub-cache-action@v1
+        uses: DeterminateSystems/flakehub-cache-action@v2
 
         # For in-tree builds
       - name: Setup Cachix
         if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-        uses: cachix/cachix-action@v15
+        uses: cachix/cachix-action@v16
         with:
-          name: nmclauncher
+          name: prismlauncher
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Run Flake checks
@@ -89,7 +134,9 @@ jobs:
       - name: Build debug package
         if: ${{ env.DEBUG == 'true' }}
         run: |
-          nix build --print-build-logs .#nmclauncher-debug
+          nix build \
+            --no-link --print-build-logs --print-out-paths \
+            .#prismlauncher-debug >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build release package
         if: ${{ env.DEBUG == 'false' }}
@@ -97,7 +144,6 @@ jobs:
           TAG: ${{ github.ref_name }}
           SYSTEM: ${{ matrix.system }}
         run: |
-          nix build --print-build-logs .#nmclauncher
-          nix build --no-link --print-out-paths .#nmclauncher \
+          nix build --no-link --print-out-paths .#prismlauncher \
             | tee -a "$GITHUB_STEP_SUMMARY" \
-            | xargs cachix pin nmclauncher "$TAG"-"$SYSTEM"
+            | xargs cachix pin prismlauncher "$TAG"-"$SYSTEM"
