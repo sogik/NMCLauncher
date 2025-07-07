@@ -121,7 +121,7 @@ namespace fs = ghc::filesystem;
 
 #if defined(Q_OS_WIN)
 
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) && !defined(DUPLICATE_EXTENTS_DATA)
 
 struct _DUPLICATE_EXTENTS_DATA {
     HANDLE FileHandle;

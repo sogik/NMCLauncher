@@ -47,14 +47,14 @@ _QT_LOGGING_RULES_
 Specifies which logging categories are shown in the logs. One can
 enable/disable multiple categories by separating them with a semicolon (;).
 
-    The specific syntax, and alternatives to this setting, can be found at
-    https://doc.qt.io/qt-6/qloggingcategory.html#configuring-categories.
+	The specific syntax, and alternatives to this setting, can be found at
+	https://doc.qt.io/qt-6/qloggingcategory.html#configuring-categories.
 
 _QT_MESSAGE_PATTERN_
 Specifies the format in which the console output will be shown.
 
-    Available options, as well as syntax, can be viewed at
-    https://doc.qt.io/qt-6/qtglobal.html#qSetMessagePattern.
+	Available options, as well as syntax, can be viewed at
+	https://doc.qt.io/qt-6/qtglobal.html#qSetMessagePattern.
 
 # EXIT STATUS
 

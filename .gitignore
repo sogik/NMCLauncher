@@ -26,6 +26,7 @@ Debug
 build
 /build-*
 build.bat
+.prettierignore
 
 # Install dirs
 install
