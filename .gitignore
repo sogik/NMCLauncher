@@ -25,6 +25,7 @@ Debug
 # Build dirs
 build
 /build-*
+build.bat
 
 # Install dirs
 install

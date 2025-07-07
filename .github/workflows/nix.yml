@@ -79,7 +79,7 @@ jobs:
         if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         uses: cachix/cachix-action@v15
         with:
-          name: prismlauncher
+          name: nmclauncher
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Run Flake checks
@@ -89,7 +89,7 @@ jobs:
       - name: Build debug package
         if: ${{ env.DEBUG == 'true' }}
         run: |
-          nix build --print-build-logs .#prismlauncher-debug
+          nix build --print-build-logs .#nmclauncher-debug
 
       - name: Build release package
         if: ${{ env.DEBUG == 'false' }}
@@ -97,7 +97,7 @@ jobs:
           TAG: ${{ github.ref_name }}
           SYSTEM: ${{ matrix.system }}
         run: |
-          nix build --print-build-logs .#prismlauncher
-          nix build --no-link --print-out-paths .#prismlauncher \
+          nix build --print-build-logs .#nmclauncher
+          nix build --no-link --print-out-paths .#nmclauncher \
             | tee -a "$GITHUB_STEP_SUMMARY" \
-            | xargs cachix pin prismlauncher "$TAG"-"$SYSTEM"
+            | xargs cachix pin nmclauncher "$TAG"-"$SYSTEM"
