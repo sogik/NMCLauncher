@@ -3,7 +3,7 @@ name: Nix
 on:
   push:
     branches:
-      - "develop"
+      - "dev"
       - "release-*"
     tags:
       - "*"
@@ -98,7 +98,7 @@ jobs:
       - name: Get merge commit
         if: ${{ github.event_name == 'pull_request_target' }}
         id: merge-commit
-        uses: PrismLauncher/PrismLauncher/.github/actions/get-merge-commit@develop
+        uses: sogik/NMCLauncher/.github/actions/get-merge-commit@develop
         with:
           pull-request-id: ${{ github.event.number }}
         env:
@@ -136,7 +136,7 @@ jobs:
         run: |
           nix build \
             --no-link --print-build-logs --print-out-paths \
-            .#prismlauncher-debug >> "$GITHUB_STEP_SUMMARY"
+            .#nmclauncher-debug >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build release package
         if: ${{ env.DEBUG == 'false' }}
@@ -144,6 +144,6 @@ jobs:
           TAG: ${{ github.ref_name }}
           SYSTEM: ${{ matrix.system }}
         run: |
-          nix build --no-link --print-out-paths .#prismlauncher \
+          nix build --no-link --print-out-paths .#nmclauncher \
             | tee -a "$GITHUB_STEP_SUMMARY" \
-            | xargs cachix pin prismlauncher "$TAG"-"$SYSTEM"
+            | xargs cachix pin nmclauncher "$TAG"-"$SYSTEM"

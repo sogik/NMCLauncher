@@ -3,7 +3,7 @@ name: "CodeQL Code Scanning"
 on:
   push:
     branches:
-      - "develop"
+      - "dev"
       - "release-*"
     paths:
       # File types

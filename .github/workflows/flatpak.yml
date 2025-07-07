@@ -3,7 +3,7 @@ name: Flatpak
 on:
   push:
     branches:
-      - "develop"
+      - "dev"
       - "release-*"
     # We don't do anything with these artifacts on releases. They go to Flathub
     tags-ignore:
@@ -96,6 +96,6 @@ jobs:
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: PrismLauncher-${{ runner.os }}-${{ env.VERSION }}-Flatpak.flatpak
-          manifest-path: flatpak/org.prismlauncher.PrismLauncher.yml
+          bundle: NMCLauncher-${{ runner.os }}-${{ env.VERSION }}-Flatpak.flatpak
+          manifest-path: flatpak/org.sogik.NMCLauncher.yml
           arch: ${{ matrix.arch }}
