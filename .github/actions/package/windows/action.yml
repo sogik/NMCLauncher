@@ -64,7 +64,7 @@ runs:
         if (Get-Content ./codesign.pfx){
           cd ${{ env.INSTALL_DIR }}
           # We ship the exact same executable for portable and non-portable editions, so signing just once is fine
-          SignTool sign /fd sha256 /td sha256 /f ../codesign.pfx /p '${{ inputs.windows-codesign-password }}' /tr http://timestamp.digicert.com prismlauncher.exe prismlauncher_updater.exe prismlauncher_filelink.exe 
+          SignTool sign /fd sha256 /td sha256 /f ../codesign.pfx /p '${{ inputs.windows-codesign-password }}' /tr http://timestamp.digicert.com nmclauncher.exe nmclauncher_updater.exe nmclauncher_filelink.exe 
         } else {
           ":warning: Skipped code signing for Windows, as certificate was not present." >> $env:GITHUB_STEP_SUMMARY
         }
@@ -119,7 +119,7 @@ runs:
       shell: pwsh
       run: |
         if (Get-Content ./codesign.pfx){
-          SignTool sign /fd sha256 /td sha256 /f codesign.pfx /p '${{ inputs.windows-codesign-password }}' /tr http://timestamp.digicert.com PrismLauncher-Setup.exe
+          SignTool sign /fd sha256 /td sha256 /f codesign.pfx /p '${{ inputs.windows-codesign-password }}' /tr http://timestamp.digicert.com NMCLauncher-Setup.exe
         } else {
           ":warning: Skipped code signing for Windows, as certificate was not present." >> $env:GITHUB_STEP_SUMMARY
         }
@@ -127,17 +127,17 @@ runs:
     - name: Upload binary zip
       uses: actions/upload-artifact@v4
       with:
-        name: PrismLauncher-${{ inputs.artifact-name }}-${{ inputs.version }}-${{ inputs.build-type }}
+        name: NMCLauncher-${{ inputs.artifact-name }}-${{ inputs.version }}-${{ inputs.build-type }}
         path: install/**
 
     - name: Upload portable zip
       uses: actions/upload-artifact@v4
       with:
-        name: PrismLauncher-${{ inputs.artifact-name }}-Portable-${{ inputs.version }}-${{ inputs.build-type }}
+        name: NMCLauncher-${{ inputs.artifact-name }}-Portable-${{ inputs.version }}-${{ inputs.build-type }}
         path: install-portable/**
 
     - name: Upload installer
       uses: actions/upload-artifact@v4
       with:
-        name: PrismLauncher-${{ inputs.artifact-name }}-Setup-${{ inputs.version }}-${{ inputs.build-type }}
-        path: PrismLauncher-Setup.exe
+        name: NMCLauncher-${{ inputs.artifact-name }}-Setup-${{ inputs.version }}-${{ inputs.build-type }}
+        path: NMCLauncher-Setup.exe
