@@ -143,9 +143,6 @@ modules:
     build-commands:
       - install -Dm755 prime-run /app/bin/prime-run
       - mv /app/bin/nmclauncher /app/bin/nmcrun
-      - install -Dm755 nmclauncher /app/bin/nmclauncher
     sources:
       - type: file
         path: prime-run
-      - type: file
-        path: nmclauncher

@@ -98,7 +98,7 @@ jobs:
       - name: Get merge commit
         if: ${{ github.event_name == 'pull_request_target' }}
         id: merge-commit
-        uses: sogik/NMCLauncher/.github/actions/get-merge-commit@develop
+        uses: sogik/NMCLauncher/.github/actions/get-merge-commit@dev
         with:
           pull-request-id: ${{ github.event.number }}
         env:
