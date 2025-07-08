@@ -176,7 +176,7 @@
           pkgs = nixpkgsFor.${system};
 
           # Build a scope from our overlay
-          nmsPackages = lib.makeScope pkgs.newScope (final: self.overlays.default final pkgs);
+          nmcPackages = lib.makeScope pkgs.newScope (final: self.overlays.default final pkgs);
 
           # Grab our packages from it and set the default
           packages = {
