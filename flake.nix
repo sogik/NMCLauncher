@@ -12,7 +12,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     libnbtplusplus = {
-      url = "github:NMCLauncher/libnbtplusplus";
+      url = "github:PrismLauncher/libnbtplusplus";
       flake = false;
     };
   };
