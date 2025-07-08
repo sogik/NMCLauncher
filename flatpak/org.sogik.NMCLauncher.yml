@@ -142,7 +142,6 @@ modules:
     buildsystem: simple
     build-commands:
       - install -Dm755 prime-run /app/bin/prime-run
-      - mv /app/bin/nmclauncher /app/bin/nmcrun
     sources:
       - type: file
         path: prime-run

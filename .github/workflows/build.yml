@@ -143,6 +143,12 @@ jobs:
           vcvars-arch: ${{ matrix.vcvars-arch }}
           qt-architecture: ${{ matrix.qt-architecture }}
 
+      - name: Export CurseForge API Key
+        run: echo "CURSEFORGE_API_KEY=${{ secrets.CURSEFORGE_API_KEY }}" >> $GITHUB_ENV
+
+      - name: Export MSA Client ID
+        run: echo "MSA_CLIENT_ID=${{ secrets.MSA_CLIENT_ID }}" >> $GITHUB_ENV
+
       ##
       # BUILD
       ##

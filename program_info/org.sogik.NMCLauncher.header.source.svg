@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="320"
+     height="100"
+     viewBox="0 0 320 100"
+     version="1.1">
+
+  <defs>
+    <linearGradient id="flameGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD580" />
+      <stop offset="100%" stop-color="#FF6B6B" />
+    </linearGradient>
+  </defs>
+
+  <!-- 🔥 Logo llama centrado y grande -->
+  <g transform="translate(5, -32) scale(0.14)">
+    <path d="M512 850c-90 -70 -150 -160 -100 -260
+             c-70 -70 -40 -160 30 -220
+             c10 50 40 80 80 100
+             c-10 -60 0 -120 60 -180
+             c40 90 100 130 90 200
+             c-5 40 -30 70 -60 90
+             c70 80 40 160 -100 270z"
+          fill="url(#flameGradient)" />
+  </g>
+
+  <!-- 🖋 Texto en negro -->
+  <text x="114" y="48"
+        font-family="Poppins, Segoe UI, sans-serif"
+        font-size="40"
+        font-weight="600"
+        fill="#000000">
+    NMC
+  </text>
+
+  <text x="114" y="85"
+        font-family="Poppins, Segoe UI, sans-serif"
+        font-size="40"
+        font-weight="600"
+        fill="#000000">
+    Launcher
+  </text>
+</svg>

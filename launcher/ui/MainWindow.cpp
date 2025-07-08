@@ -213,9 +213,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     // hide, disable and show stuff
     {
         ui->actionReportBug->setVisible(!BuildConfig.BUG_TRACKER_URL.isEmpty());
-        ui->actionMATRIX->setVisible(!BuildConfig.MATRIX_URL.isEmpty());
-        ui->actionDISCORD->setVisible(!BuildConfig.DISCORD_URL.isEmpty());
-        ui->actionREDDIT->setVisible(!BuildConfig.SUBREDDIT_URL.isEmpty());
+        // ui->actionMATRIX->setVisible(!BuildConfig.MATRIX_URL.isEmpty());
+        // ui->actionDISCORD->setVisible(!BuildConfig.DISCORD_URL.isEmpty());
+        // ui->actionREDDIT->setVisible(!BuildConfig.SUBREDDIT_URL.isEmpty());
 
         ui->actionCheckUpdate->setVisible(APPLICATION->updaterEnabled());
 

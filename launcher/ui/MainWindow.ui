@@ -217,9 +217,6 @@
     <addaction name="actionReportBug"/>
     <addaction name="actionAddToPATH"/>
     <addaction name="separator"/>
-    <addaction name="actionMATRIX"/>
-    <addaction name="actionDISCORD"/>
-    <addaction name="actionREDDIT"/>
     <addaction name="separator"/>
     <addaction name="actionMoreNews"/>
     <addaction name="actionCheckUpdate"/>
@@ -631,42 +628,6 @@
    </property>
    <property name="toolTip">
     <string>Open the bug tracker to report a bug with %1.</string>
-   </property>
-  </action>
-  <action name="actionDISCORD">
-   <property name="icon">
-    <iconset theme="discord">
-     <normaloff>.</normaloff>.</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Discord Guild</string>
-   </property>
-   <property name="toolTip">
-    <string>Open %1 Discord guild.</string>
-   </property>
-  </action>
-  <action name="actionMATRIX">
-   <property name="icon">
-    <iconset theme="matrix">
-     <normaloff>.</normaloff>.</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Matrix Space</string>
-   </property>
-   <property name="toolTip">
-    <string>Open %1 Matrix space.</string>
-   </property>
-  </action>
-  <action name="actionREDDIT">
-   <property name="icon">
-    <iconset theme="reddit-alien">
-     <normaloff>.</normaloff>.</iconset>
-   </property>
-   <property name="text">
-    <string>Sub&amp;reddit</string>
-   </property>
-   <property name="toolTip">
-    <string>Open %1 subreddit.</string>
    </property>
   </action>
   <action name="actionAbout">
