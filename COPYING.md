@@ -1,7 +1,7 @@
 ## NMC Launcher
 
      NMC Launcher - Minecraft Launcher
-     Copyright (C) 2025 sogik Contributors
+     Copyright (C) 2025 sogik
 
      This program is free software and is licensed under the BSD 3-Clause License.
 
@@ -47,7 +47,6 @@
          See the License for the specific language governing permissions and
          limitations under the License.
 
-
 ## PollyMC
 
      PollyMC - Minecraft Launcher
@@ -81,7 +80,6 @@
          WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
          See the License for the specific language governing permissions and
          limitations under the License.
-
 
 ## Prism Launcher
 
