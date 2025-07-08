@@ -44,7 +44,7 @@ let
 in
 
 stdenv.mkDerivation {
-  pname = "prismlauncher-unwrapped";
+  pname = "nmclauncher-unwrapped";
   version = "9.3-unstable-${date}";
 
   src = lib.fileset.toSource {
@@ -120,13 +120,13 @@ stdenv.mkDerivation {
       their own mods, texture packs, saves, etc) and helps you manage them and
       their associated options with a simple interface.
     '';
-    homepage = "https://prismlauncher.org/";
-    license = lib.licenses.gpl3Only;
+    homepage = "https://github.com/sogik/NMCLauncher";
+    license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [
       Scrumplex
       getchoo
     ];
-    mainProgram = "prismlauncher";
+    mainProgram = "nmcauncher";
     platforms = lib.platforms.linux ++ lib.platforms.darwin;
   };
 }
