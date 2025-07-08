@@ -2,9 +2,9 @@
   description = "A custom launcher for Minecraft that allows you to easily manage multiple installations of Minecraft at once (Fork of MultiMC)";
 
   nixConfig = {
-    extra-substituters = [ "https://prismlauncher.cachix.org" ];
+    extra-substituters = [ "https://nmclauncher.cachix.org" ];
     extra-trusted-public-keys = [
-      "prismlauncher.cachix.org-1:9/n/FGyABA2jLUVfY+DEp4hKds/rwO+SCOtbOkDzd+c="
+      "nmclauncher.cachix.org-1:RcJ7sWlfglVEaIo+t44O0XuIQwE6FspmAAQqHS7d9Qk="
     ];
   };
 
@@ -12,7 +12,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     libnbtplusplus = {
-      url = "github:PrismLauncher/libnbtplusplus";
+      url = "github:NMCLauncher/libnbtplusplus";
       flake = false;
     };
   };
@@ -90,7 +90,7 @@
           packages' = self.packages.${system};
 
           welcomeMessage = ''
-            Welcome to the Prism Launcher repository! 🌈
+            Welcome to the NMC Launcher repository!
 
             We just set some things up for you. To get building, you can run:
 
@@ -100,21 +100,16 @@
             $ ninjaInstallPhase
             ```
 
-            Feel free to ask any questions in our Discord server or Matrix space:
-              - https://prismlauncher.org/discord
-              - https://matrix.to/#/#prismlauncher:matrix.org
-
-            And thanks for helping out :)
           '';
 
           # Re-use our package wrapper to wrap our development environment
-          qt-wrapper-env = packages'.prismlauncher.overrideAttrs (old: {
+          qt-wrapper-env = packages'.nmclauncher.overrideAttrs (old: {
             name = "qt-wrapper-env";
 
             # Required to use script-based makeWrapper below
             strictDeps = true;
 
-            # We don't need/want the unwrapped Prism package
+            # We don't need/want the unwrapped nmc package
             paths = [ ];
 
             nativeBuildInputs = old.nativeBuildInputs or [ ] ++ [
@@ -132,7 +127,7 @@
 
         {
           default = pkgs.mkShell {
-            inputsFrom = [ packages'.prismlauncher-unwrapped ];
+            inputsFrom = [ packages'.nmclauncher-unwrapped ];
 
             packages = with pkgs; [
               ccache
@@ -140,7 +135,7 @@
             ];
 
             cmakeBuildType = "Debug";
-            cmakeFlags = [ "-GNinja" ] ++ packages'.prismlauncher.cmakeFlags;
+            cmakeFlags = [ "-GNinja" ] ++ packages'.nmclauncher.cmakeFlags;
             dontFixCmake = true;
 
             shellHook = ''
@@ -164,14 +159,14 @@
       formatter = forAllSystems (system: nixpkgsFor.${system}.nixfmt-rfc-style);
 
       overlays.default = final: prev: {
-        prismlauncher-unwrapped = prev.callPackage ./nix/unwrapped.nix {
+        nmclauncher-unwrapped = prev.callPackage ./nix/unwrapped.nix {
           inherit
             libnbtplusplus
             self
             ;
         };
 
-        prismlauncher = final.callPackage ./nix/wrapper.nix { };
+        nmclauncher = final.callPackage ./nix/wrapper.nix { };
       };
 
       packages = forAllSystems (
@@ -181,12 +176,12 @@
           pkgs = nixpkgsFor.${system};
 
           # Build a scope from our overlay
-          prismPackages = lib.makeScope pkgs.newScope (final: self.overlays.default final pkgs);
+          nmsPackages = lib.makeScope pkgs.newScope (final: self.overlays.default final pkgs);
 
           # Grab our packages from it and set the default
           packages = {
-            inherit (prismPackages) prismlauncher-unwrapped prismlauncher;
-            default = prismPackages.prismlauncher;
+            inherit (nmcPackages) nmclauncher-unwrapped nmclauncher;
+            default = nmcPackages.nmclauncher;
           };
         in
 
@@ -204,11 +199,11 @@
         in
 
         {
-          prismlauncher-debug = packages'.prismlauncher.override {
-            prismlauncher-unwrapped = legacyPackages'.prismlauncher-unwrapped-debug;
+          nmclauncher-debug = packages'.nmclauncher.override {
+            nmclauncher-unwrapped = legacyPackages'.nmclauncher-unwrapped-debug;
           };
 
-          prismlauncher-unwrapped-debug = packages'.prismlauncher-unwrapped.overrideAttrs {
+          nmclauncher-unwrapped-debug = packages'.nmclauncher-unwrapped.overrideAttrs {
             cmakeBuildType = "Debug";
             dontStrip = true;
           };
