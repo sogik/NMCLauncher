@@ -127,6 +127,10 @@ jobs:
           name: nmclauncher
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
+      - name: Update Flake Lock
+        run: |
+          nix flake update
+
       - name: Run Flake checks
         run: |
           nix flake check --print-build-logs --show-trace
