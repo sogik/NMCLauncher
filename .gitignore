@@ -7,6 +7,8 @@ resources/CMakeFiles
 *.swp
 html/
 
+PollyMc/
+
 # Project Files
 *.pro.user
 CMakeLists.txt.user
