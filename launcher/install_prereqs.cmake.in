@@ -23,10 +23,30 @@ set(gp_cmd_paths ${gp_cmd_paths}
 
 include(BundleUtilities)
 
+# Expand install-time variables
+set(BUNDLE_APP "@APPS@")
+set(BUNDLE_SEARCH_DIRS "@DIRS@")
+
+# Debug output to verify paths at install time
+message(STATUS "[install] Bundle executable: ${BUNDLE_APP}")
+message(STATUS "[install] Search directories: ${BUNDLE_SEARCH_DIRS}")
+message(STATUS "[install] Install prefix: ${CMAKE_INSTALL_PREFIX}")
+
 # Verify the executable exists before running fixup_bundle
-if(NOT EXISTS "@APPS@")
-    message(FATAL_ERROR "Cannot find executable to fix up: @APPS@")
+if(NOT EXISTS "${BUNDLE_APP}")
+    message(FATAL_ERROR "Cannot find executable to fix up: ${BUNDLE_APP}")
 endif()
 
-fixup_bundle("@APPS@" "${QTPLUGINS}" "@DIRS@")
+# Verify the bundle app directory exists
+get_filename_component(BUNDLE_DIR "${BUNDLE_APP}" DIRECTORY)
+get_filename_component(BUNDLE_DIR "${BUNDLE_DIR}" DIRECTORY)
+get_filename_component(BUNDLE_DIR "${BUNDLE_DIR}" DIRECTORY)
+message(STATUS "[install] Bundle directory: ${BUNDLE_DIR}")
+
+if(NOT EXISTS "${BUNDLE_DIR}")
+    message(FATAL_ERROR "Cannot find bundle directory: ${BUNDLE_DIR}")
+endif()
+
+message(STATUS "[install] Running fixup_bundle...")
+fixup_bundle("${BUNDLE_APP}" "${QTPLUGINS}" "${BUNDLE_SEARCH_DIRS}")
 

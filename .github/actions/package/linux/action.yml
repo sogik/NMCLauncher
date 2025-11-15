@@ -81,7 +81,7 @@ runs:
         export OUTPUT="NMCLauncher${ARTIFACT_SUFFIX}-$APPIMAGE_ARCH.AppImage"
 
         # Ensure linuxdeploy AppImage exists or attempt to download for this arch
-        LD_FILE="$(ls linuxdeploy-*.AppImage 2>/dev/null | head -n1 || true)"
+        LD_FILE="$(ls linuxdeploy-*.AppImage 2>/dev/null | grep -v plugin | head -n1 || true)"
         if [ -z "$LD_FILE" ]; then
           echo "::warning::linuxdeploy AppImage not present; attempting to download for $APPIMAGE_ARCH"
           case "$APPIMAGE_ARCH" in
@@ -100,6 +100,36 @@ runs:
           fi
         else
           chmod +x "$LD_FILE"
+        fi
+
+        # Ensure linuxdeploy-plugin-qt exists or download it
+        PLUGIN_FILE="linuxdeploy-plugin-qt-$APPIMAGE_ARCH.AppImage"
+        if [ ! -f "$PLUGIN_FILE" ]; then
+          echo "::warning::linuxdeploy-plugin-qt not present; attempting to download for $APPIMAGE_ARCH"
+          case "$APPIMAGE_ARCH" in
+            x86_64) PLUGIN_URL="https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage" ;;
+            aarch64) PLUGIN_URL="https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-aarch64.AppImage" ;;
+            i386) PLUGIN_URL="https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-i386.AppImage" ;;
+            *) PLUGIN_URL="" ;;
+          esac
+          if [ -n "$PLUGIN_URL" ]; then
+            curl -L -o "$PLUGIN_FILE" "$PLUGIN_URL"
+            chmod +x "$PLUGIN_FILE"
+            echo "✅ Downloaded and made executable: $PLUGIN_FILE"
+          else
+            echo "::error::No linuxdeploy-plugin-qt available for $APPIMAGE_ARCH"
+            exit 1
+          fi
+        else
+          chmod +x "$PLUGIN_FILE"
+          echo "✅ Plugin already present: $PLUGIN_FILE"
+        fi
+
+        # Verify plugin is executable
+        if [ ! -x "$PLUGIN_FILE" ]; then
+          echo "::error::Plugin $PLUGIN_FILE exists but is not executable"
+          ls -la "$PLUGIN_FILE"
+          exit 1
         fi
 
         mkdir -p ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib
@@ -162,8 +192,8 @@ runs:
           echo ":warning: Skipped code signing for Linux AppImage, as gpg key was not present." >> $GITHUB_STEP_SUMMARY
         fi
 
-        # Run linuxdeploy and capture exit code
-        "$LD_FILE" --appdir ${{ env.INSTALL_APPIMAGE_DIR }} --output appimage --plugin qt -i ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/icons/hicolor/scalable/apps/org.sogik.NMCLauncher.svg
+        # Run linuxdeploy with explicit path and capture exit code
+        ./"$LD_FILE" --appdir ${{ env.INSTALL_APPIMAGE_DIR }} --output appimage --plugin qt -i ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/icons/hicolor/scalable/apps/org.sogik.NMCLauncher.svg
         linuxdeploy_rc=$?
         echo "linuxdeploy exit code: $linuxdeploy_rc"
 

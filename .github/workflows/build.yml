@@ -318,6 +318,8 @@ jobs:
           REM Verify compiler is available
           cl.exe /? >nul 2>&1 || (echo ERROR: cl.exe not found after vcvars & exit /b 1)
           cmake --build --preset "%CMAKE_PRESET%" --target all
+          REM Build updater explicitly (may be EXCLUDE_FROM_ALL)
+          cmake --build --preset "%CMAKE_PRESET%" --target nmclauncher_updater || echo Updater target not available
 
       - name: Build (MinGW)
         if: ${{ runner.os == 'Windows' && matrix.msystem != '' }}
@@ -328,6 +330,8 @@ jobs:
           BUILD_PLATFORM: official
         run: |
           cmake --build --preset "$CMAKE_PRESET" --target all
+          # Build updater explicitly (may be EXCLUDE_FROM_ALL)
+          cmake --build --preset "$CMAKE_PRESET" --target nmclauncher_updater || echo "Updater target not available"
 
       - name: Build (Linux/macOS)
         if: ${{ runner.os != 'Windows' }}

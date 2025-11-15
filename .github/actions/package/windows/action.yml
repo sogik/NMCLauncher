@@ -35,6 +35,19 @@ runs:
         INSTALL_DIR: install
       run: |
         cmake --install ${{ env.BUILD_DIR }}
+
+        # Check if updater was built and copy it if needed
+        if [ ! -f "${{ env.INSTALL_DIR }}/nmclauncher_updater.exe" ]; then
+          echo "::warning::nmclauncher_updater.exe not found in install dir, searching build tree..."
+          updater_path=$(find ${{ env.BUILD_DIR }} -name "nmclauncher_updater.exe" -type f | head -n1 || true)
+          if [ -n "$updater_path" ] && [ -f "$updater_path" ]; then
+            cp "$updater_path" "${{ env.INSTALL_DIR }}/nmclauncher_updater.exe"
+            echo "✅ Copied updater from $updater_path"
+          else
+            echo "⚠️ Updater not found - installer may not include auto-update functionality"
+          fi
+        fi
+
         touch ${{ env.INSTALL_DIR }}/manifest.txt
         for l in $(find ${{ env.INSTALL_DIR }} -type f); do l=$(cygpath -u $l); l=${l#$(pwd)/}; l=${l#${{ env.INSTALL_DIR }}/}; l=${l#./}; echo $l; done >> ${{ env.INSTALL_DIR }}/manifest.txt
 
@@ -46,6 +59,39 @@ runs:
         INSTALL_DIR: install
       run: |
         cmake --install ${{ env.BUILD_DIR }} --config ${{ inputs.build-type }}
+
+        # Check if updater was built and copy it if needed
+        $updaterPath = Join-Path $env:INSTALL_DIR "nmclauncher_updater.exe"
+        if (-not (Test-Path $updaterPath)) {
+          Write-Host "::warning::nmclauncher_updater.exe not found in $env:INSTALL_DIR, searching build tree..."
+          
+          $possibleLocations = @(
+            (Join-Path $env:BUILD_DIR "${{ inputs.build-type }}\nmclauncher_updater.exe"),
+            (Join-Path $env:BUILD_DIR "Release\nmclauncher_updater.exe"),
+            (Join-Path $env:BUILD_DIR "Debug\nmclauncher_updater.exe"),
+            (Join-Path $env:BUILD_DIR "nmclauncher_updater.exe")
+          )
+          
+          $found = $null
+          foreach ($p in $possibleLocations) {
+            if (Test-Path $p) { 
+              $found = $p
+              break 
+            }
+          }
+          
+          if (-not $found) {
+            $hit = Get-ChildItem $env:BUILD_DIR -Recurse -Filter "nmclauncher_updater.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($hit) { $found = $hit.FullName }
+          }
+          
+          if ($found) {
+            Copy-Item $found $env:INSTALL_DIR
+            Write-Host "✅ Copied updater from $found"
+          } else {
+            Write-Host "⚠️ Updater not found - installer may not include auto-update functionality"
+          }
+        }
 
         cd ${{ github.workspace }}
 
