@@ -5,7 +5,6 @@ on:
     branches:
       - "dev"
       - "release-*"
-      - "alt-binaries"
     paths:
       # File types
       - "**.cpp"
@@ -265,9 +264,25 @@ jobs:
           )
           cmake --preset "%CMAKE_PRESET%" %CMAKE_EXTRA_FLAGS%
 
-      - name: Configure CMake with optimizations (Linux/macOS/MinGW)
-        if: ${{ runner.os != 'Windows' || (matrix.base-cmake-preset != 'windows_msvc' && matrix.base-cmake-preset != 'windows_msvc_arm64_cross') }}
-        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
+      - name: Configure CMake with optimizations (MinGW)
+        if: ${{ runner.os == 'Windows' && matrix.msystem != '' }}
+        shell: msys2 {0}
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+          ENABLE_LTO: ${{ matrix.enable-lto || 'false' }}
+          USE_CLANG: ${{ matrix.use-clang || 'false' }}
+        run: |
+          CMAKE_EXTRA_FLAGS=""
+
+          if [ "$ENABLE_LTO" = "true" ]; then
+            CMAKE_EXTRA_FLAGS="-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON"
+          fi
+
+          cmake --preset "$CMAKE_PRESET" $CMAKE_EXTRA_FLAGS
+
+      - name: Configure CMake with optimizations (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        shell: bash
         env:
           CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
           ENABLE_LTO: ${{ matrix.enable-lto || 'false' }}
@@ -304,9 +319,19 @@ jobs:
           cl.exe /? >nul 2>&1 || (echo ERROR: cl.exe not found after vcvars & exit /b 1)
           cmake --build --preset "%CMAKE_PRESET%" --target all
 
-      - name: Build (Linux/macOS/MinGW)
-        if: ${{ runner.os != 'Windows' || (matrix.base-cmake-preset != 'windows_msvc' && matrix.base-cmake-preset != 'windows_msvc_arm64_cross') }}
-        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
+      - name: Build (MinGW)
+        if: ${{ runner.os == 'Windows' && matrix.msystem != '' }}
+        shell: msys2 {0}
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+          ARTIFACT_NAME: ${{ matrix.artifact-name }}-Qt6
+          BUILD_PLATFORM: official
+        run: |
+          cmake --build --preset "$CMAKE_PRESET" --target all
+
+      - name: Build (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        shell: bash
         env:
           CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
           ARTIFACT_NAME: ${{ matrix.artifact-name }}-Qt6
@@ -327,9 +352,17 @@ jobs:
           )
           ctest --preset "%CMAKE_PRESET%" || exit 0
 
-      - name: Test (Linux/macOS/MinGW)
-        if: ${{ runner.os != 'Windows' || (matrix.base-cmake-preset != 'windows_msvc' && matrix.base-cmake-preset != 'windows_msvc_arm64_cross') }}
-        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
+      - name: Test (MinGW)
+        if: ${{ runner.os == 'Windows' && matrix.msystem != '' }}
+        shell: msys2 {0}
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+        run: |
+          ctest --preset "$CMAKE_PRESET" || true
+
+      - name: Test (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        shell: bash
         env:
           CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
         run: |
@@ -343,9 +376,17 @@ jobs:
         run: |
           cmake --install build --prefix install
 
-      - name: Install (Linux/macOS/MinGW)
-        if: ${{ runner.os != 'Windows' || (matrix.base-cmake-preset != 'windows_msvc' && matrix.base-cmake-preset != 'windows_msvc_arm64_cross') }}
-        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
+      - name: Install (MinGW)
+        if: ${{ runner.os == 'Windows' && matrix.msystem != '' }}
+        shell: msys2 {0}
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+        run: |
+          cmake --install build --prefix install
+
+      - name: Install (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        shell: bash
         env:
           CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
         run: |
@@ -355,11 +396,29 @@ jobs:
       # PACKAGE
       ##
 
-      - name: Get short version
-        id: short-version
-        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
+      - name: Get short version (MinGW)
+        if: ${{ runner.os == 'Windows' && matrix.msystem != '' }}
+        id: short-version-mingw
+        shell: msys2 {0}
         run: |
           echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Get short version (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        id: short-version-unix
+        shell: bash
+        run: |
+          echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set version output
+        id: short-version
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ] && [ -n "${{ matrix.msystem }}" ]; then
+            echo "version=${{ steps.short-version-mingw.outputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ steps.short-version-unix.outputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Package (Linux)
         if: ${{ runner.os == 'Linux' }}
