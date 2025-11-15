@@ -23,30 +23,53 @@ set(gp_cmd_paths ${gp_cmd_paths}
 
 include(BundleUtilities)
 
-# Expand install-time variables
+# Debug output at install time
+message(STATUS "[install] CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
+
+# APPS variable is set with escaped \${CMAKE_INSTALL_PREFIX} so it evaluates at install time
+# We need to evaluate it now
 set(BUNDLE_APP "@APPS@")
 set(BUNDLE_SEARCH_DIRS "@DIRS@")
 
-# Debug output to verify paths at install time
-message(STATUS "[install] Bundle executable: ${BUNDLE_APP}")
+message(STATUS "[install] Bundle executable (before eval): ${BUNDLE_APP}")
 message(STATUS "[install] Search directories: ${BUNDLE_SEARCH_DIRS}")
-message(STATUS "[install] Install prefix: ${CMAKE_INSTALL_PREFIX}")
 
-# Verify the executable exists before running fixup_bundle
-if(NOT EXISTS "${BUNDLE_APP}")
-    message(FATAL_ERROR "Cannot find executable to fix up: ${BUNDLE_APP}")
+# Check if we're actually dealing with a macOS bundle
+# On macOS, BUNDLE_APP will contain .app/Contents/MacOS/
+# On other platforms, it may be a regular executable path
+if(BUNDLE_APP MATCHES "\\.app/Contents/MacOS/")
+    # macOS bundle detected - verify and run fixup_bundle
+    message(STATUS "[install] macOS bundle detected")
+    
+    # Verify the executable exists before running fixup_bundle
+    if(NOT EXISTS "${BUNDLE_APP}")
+        # List contents to help debug
+        get_filename_component(PARENT_DIR "${BUNDLE_APP}" DIRECTORY)
+        if(EXISTS "${PARENT_DIR}")
+            file(GLOB CONTENTS "${PARENT_DIR}/*")
+            message(STATUS "[install] Contents of ${PARENT_DIR}:")
+            foreach(item ${CONTENTS})
+                message(STATUS "  - ${item}")
+            endforeach()
+        endif()
+        message(FATAL_ERROR "Cannot find executable to fix up: ${BUNDLE_APP}")
+    endif()
+
+    # Verify the bundle app directory exists
+    get_filename_component(BUNDLE_DIR "${BUNDLE_APP}" DIRECTORY)
+    get_filename_component(BUNDLE_DIR "${BUNDLE_DIR}" DIRECTORY)
+    get_filename_component(BUNDLE_DIR "${BUNDLE_DIR}" DIRECTORY)
+    message(STATUS "[install] Bundle directory: ${BUNDLE_DIR}")
+
+    if(NOT EXISTS "${BUNDLE_DIR}")
+        message(FATAL_ERROR "Cannot find bundle directory: ${BUNDLE_DIR}")
+    endif()
+
+    message(STATUS "[install] Running fixup_bundle...")
+    fixup_bundle("${BUNDLE_APP}" "${QTPLUGINS}" "${BUNDLE_SEARCH_DIRS}")
+    message(STATUS "[install] fixup_bundle completed successfully")
+else()
+    # Not a macOS bundle - skip fixup_bundle
+    message(STATUS "[install] Not a macOS bundle; skipping fixup_bundle (this is normal on Windows/Linux)")
 endif()
-
-# Verify the bundle app directory exists
-get_filename_component(BUNDLE_DIR "${BUNDLE_APP}" DIRECTORY)
-get_filename_component(BUNDLE_DIR "${BUNDLE_DIR}" DIRECTORY)
-get_filename_component(BUNDLE_DIR "${BUNDLE_DIR}" DIRECTORY)
-message(STATUS "[install] Bundle directory: ${BUNDLE_DIR}")
-
-if(NOT EXISTS "${BUNDLE_DIR}")
-    message(FATAL_ERROR "Cannot find bundle directory: ${BUNDLE_DIR}")
-endif()
-
-message(STATUS "[install] Running fixup_bundle...")
-fixup_bundle("${BUNDLE_APP}" "${QTPLUGINS}" "${BUNDLE_SEARCH_DIRS}")
 
