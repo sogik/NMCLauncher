@@ -1408,7 +1408,23 @@ if(WIN32 OR (DEFINED Launcher_BUILD_FILELINKER AND Launcher_BUILD_FILELINKER))
 
     add_executable("${Launcher_Name}_filelink" WIN32 filelink/filelink_main.cpp)
 
-    target_sources("${Launcher_Name}_filelink" PRIVATE filelink/filelink.exe.manifest)
+    # Embed manifest through resource file to avoid mt.exe merge conflicts
+    # The .rc file references filelink.exe.manifest which has level="requireAdministrator"
+    if(MSVC OR CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")
+        set(FILELINK_RC "${CMAKE_CURRENT_SOURCE_DIR}/filelink/filelink.rc")
+        set_source_files_properties(${FILELINK_RC} PROPERTIES LANGUAGE RC)
+        target_sources("${Launcher_Name}_filelink" PRIVATE ${FILELINK_RC})
+        
+        # Also force linker to use our manifest settings and embed it
+        message(STATUS "Embedding manifest for ${Launcher_Name}_filelink via RC file to avoid mt.exe merge conflicts")
+        target_link_options("${Launcher_Name}_filelink" PRIVATE 
+            "/MANIFESTUAC:level='requireAdministrator' uiAccess='false'"
+            "/MANIFEST:EMBED"
+        )
+    else()
+        # Non-MSVC platforms: add manifest directly (won't cause issues)
+        target_sources("${Launcher_Name}_filelink" PRIVATE filelink/filelink.exe.manifest)
+    endif()
 
     target_link_libraries("${Launcher_Name}_filelink" filelink_logic)
 

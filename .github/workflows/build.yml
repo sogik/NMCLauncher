@@ -73,46 +73,88 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Linux - GCC (standard)
           - os: ubuntu-22.04
             artifact-name: Linux
             base-cmake-preset: linux
 
-            # NOTE(@getchoo): Yes, we're intentionally using 24.04 here!!!
-            #
-            # It's not really documented anywhere AFAICT, but upstream Qt binaries
-            # *for the same version* are compiled against 24.04 on ARM, and *not* 22.04 like x64
+          # Linux - GCC + LTO
+          - os: ubuntu-22.04
+            artifact-name: Linux+LTO
+            base-cmake-preset: linux
+            enable-lto: true
+
+          # Linux - Clang
+          - os: ubuntu-22.04
+            artifact-name: Linux-Clang
+            base-cmake-preset: linux
+            use-clang: true
+
+          # Linux ARM
           - os: ubuntu-24.04-arm
             artifact-name: Linux-aarch64
             base-cmake-preset: linux
 
+          # Linux ARM + LTO
+          - os: ubuntu-24.04-arm
+            artifact-name: Linux-aarch64+LTO
+            base-cmake-preset: linux
+            enable-lto: true
+
+          # Windows MinGW (standard)
           - os: windows-2022
             artifact-name: Windows-MinGW-w64
             base-cmake-preset: windows_mingw
             msystem: CLANG64
             vcvars-arch: amd64_x86
 
+          # Windows MinGW + LTO
+          - os: windows-2022
+            artifact-name: Windows-MinGW-w64+LTO
+            base-cmake-preset: windows_mingw
+            msystem: CLANG64
+            vcvars-arch: amd64_x86
+            enable-lto: true
+
+          # Windows MinGW ARM
           - os: windows-11-arm
             artifact-name: Windows-MinGW-arm64
             base-cmake-preset: windows_mingw
             msystem: CLANGARM64
             vcvars-arch: arm64
 
+          # Windows MSVC (standard)
           - os: windows-2022
             artifact-name: Windows-MSVC
             base-cmake-preset: windows_msvc
-            # TODO(@getchoo): This is the default in setup-dependencies/windows. Why isn't it working?!?!
             vcvars-arch: amd64
 
+          # Windows MSVC + LTO
+          - os: windows-2022
+            artifact-name: Windows-MSVC+LTO
+            base-cmake-preset: windows_msvc
+            vcvars-arch: amd64
+            enable-lto: true
+
+          # Windows MSVC ARM64
           - os: windows-2022
             artifact-name: Windows-MSVC-arm64
             base-cmake-preset: windows_msvc_arm64_cross
             vcvars-arch: amd64_arm64
             qt-architecture: win64_msvc2022_arm64_cross_compiled
 
+          # macOS (standard)
           - os: macos-14
             artifact-name: macOS
             base-cmake-preset: ${{ (inputs.build-type || 'Debug') == 'Debug' && 'macos_universal' || 'macos' }}
             macosx-deployment-target: 12.0
+
+          # macOS + LTO
+          - os: macos-14
+            artifact-name: macOS+LTO
+            base-cmake-preset: ${{ (inputs.build-type || 'Debug') == 'Debug' && 'macos_universal' || 'macos' }}
+            macosx-deployment-target: 12.0
+            enable-lto: true
 
     runs-on: ${{ matrix.os }}
 
@@ -133,6 +175,14 @@ jobs:
         with:
           submodules: true
 
+      - name: Install Clang (Linux)
+        if: ${{ runner.os == 'Linux' && matrix.use-clang }}
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 18
+          sudo apt-get install -y lld-18
+
       - name: Setup dependencies
         id: setup-dependencies
         uses: ./.github/actions/setup-dependencies
@@ -142,6 +192,9 @@ jobs:
           msystem: ${{ matrix.msystem }}
           vcvars-arch: ${{ matrix.vcvars-arch }}
           qt-architecture: ${{ matrix.qt-architecture }}
+        env:
+          CC: ${{ matrix.use-clang && 'clang-18' || '' }}
+          CXX: ${{ matrix.use-clang && 'clang++-18' || '' }}
 
       - name: Export CurseForge API Key
         run: echo "CURSEFORGE_API_KEY=${{ secrets.CURSEFORGE_API_KEY }}" >> $GITHUB_ENV
@@ -161,14 +214,46 @@ jobs:
         run: |
           echo preset="$BASE_CMAKE_PRESET"_"$PRESET_TYPE" >> "$GITHUB_OUTPUT"
 
-      - name: Run CMake workflow
+      - name: Configure CMake with optimizations
         env:
           CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+          ENABLE_LTO: ${{ matrix.enable-lto || 'false' }}
+          USE_CLANG: ${{ matrix.use-clang || 'false' }}
+          CC: ${{ matrix.use-clang && 'clang-18' || '' }}
+          CXX: ${{ matrix.use-clang && 'clang++-18' || '' }}
+        shell: bash
+        run: |
+          CMAKE_EXTRA_FLAGS=""
 
+          if [ "$ENABLE_LTO" = "true" ]; then
+            CMAKE_EXTRA_FLAGS="-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON"
+          fi
+
+          if [ "$USE_CLANG" = "true" ] && [ "${{ runner.os }}" = "Linux" ]; then
+            CMAKE_EXTRA_FLAGS="$CMAKE_EXTRA_FLAGS -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld-18"
+          fi
+
+          cmake --preset "$CMAKE_PRESET" $CMAKE_EXTRA_FLAGS
+
+      - name: Build
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
           ARTIFACT_NAME: ${{ matrix.artifact-name }}-Qt6
           BUILD_PLATFORM: official
         run: |
-          cmake --workflow --preset "$CMAKE_PRESET"
+          cmake --build --preset "$CMAKE_PRESET" --target all
+
+      - name: Test
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+        run: |
+          ctest --preset "$CMAKE_PRESET" || true
+
+      - name: Install
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+        run: |
+          cmake --install build --prefix install
 
       ##
       # PACKAGE

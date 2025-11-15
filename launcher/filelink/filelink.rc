@@ -1,0 +1,4 @@
+// Resource file for filelink executable
+// Embeds the manifest to avoid mt.exe merge conflicts
+
+1 RT_MANIFEST "filelink.exe.manifest"

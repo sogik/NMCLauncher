@@ -33,12 +33,31 @@ jobs:
       - name: Package artifacts properly
         run: |
           mv ${{ github.workspace }}/NMCLauncher-source NMCLauncher-${{ env.VERSION }}
+
+          # Linux portable variants
           mv NMCLauncher-Linux-Qt6-Portable*/NMCLauncher-portable.tar.gz NMCLauncher-Linux-Qt6-Portable-${{ env.VERSION }}.tar.gz
-          mv NMCLauncher-*.AppImage/NMCLauncher-*-x86_64.AppImage NMCLauncher-Linux-x86_64.AppImage
-          mv NMCLauncher-*.AppImage.zsync/NMCLauncher-*-x86_64.AppImage.zsync NMCLauncher-Linux-x86_64.AppImage.zsync
-          mv NMCLauncher-*.AppImage/NMCLauncher-*-aarch64.AppImage NMCLauncher-Linux-aarch64.AppImage
-          mv NMCLauncher-*.AppImage.zsync/NMCLauncher-*-aarch64.AppImage.zsync NMCLauncher-Linux-aarch64.AppImage.zsync
-          mv NMCLauncher-macOS*/NMCLauncher.zip NMCLauncher-macOS-${{ env.VERSION }}.zip
+          mv NMCLauncher-Linux+LTO-Qt6-Portable*/NMCLauncher-portable.tar.gz NMCLauncher-Linux+LTO-Qt6-Portable-${{ env.VERSION }}.tar.gz
+          mv NMCLauncher-Linux-Clang-Qt6-Portable*/NMCLauncher-portable.tar.gz NMCLauncher-Linux-Clang-Qt6-Portable-${{ env.VERSION }}.tar.gz
+          mv NMCLauncher-Linux-aarch64-Qt6-Portable*/NMCLauncher-portable.tar.gz NMCLauncher-Linux-aarch64-Qt6-Portable-${{ env.VERSION }}.tar.gz
+          mv NMCLauncher-Linux-aarch64+LTO-Qt6-Portable*/NMCLauncher-portable.tar.gz NMCLauncher-Linux-aarch64+LTO-Qt6-Portable-${{ env.VERSION }}.tar.gz
+
+          # Linux AppImages - ahora cada variante tiene su propio AppImage
+          # x86_64 variants
+          mv NMCLauncher-Linux-*-Release-x86_64.AppImage/NMCLauncher-Linux-*-Release-x86_64.AppImage NMCLauncher-Linux-x86_64.AppImage
+          mv NMCLauncher-Linux-*-Release-x86_64.AppImage.zsync/NMCLauncher-Linux-*-x86_64.AppImage.zsync NMCLauncher-Linux-x86_64.AppImage.zsync
+          mv NMCLauncher-Linux+LTO-*-Release-x86_64.AppImage/NMCLauncher-Linux+LTO-*-Release-x86_64.AppImage NMCLauncher-Linux+LTO-x86_64.AppImage
+          mv NMCLauncher-Linux+LTO-*-Release-x86_64.AppImage.zsync/NMCLauncher-Linux+LTO-*-x86_64.AppImage.zsync NMCLauncher-Linux+LTO-x86_64.AppImage.zsync
+          mv NMCLauncher-Linux-Clang-*-Release-x86_64.AppImage/NMCLauncher-Linux-Clang-*-Release-x86_64.AppImage NMCLauncher-Linux-Clang-x86_64.AppImage
+          mv NMCLauncher-Linux-Clang-*-Release-x86_64.AppImage.zsync/NMCLauncher-Linux-Clang-*-x86_64.AppImage.zsync NMCLauncher-Linux-Clang-x86_64.AppImage.zsync
+          # aarch64 variants
+          mv NMCLauncher-Linux-aarch64-*-Release-aarch64.AppImage/NMCLauncher-Linux-aarch64-*-Release-aarch64.AppImage NMCLauncher-Linux-aarch64.AppImage
+          mv NMCLauncher-Linux-aarch64-*-Release-aarch64.AppImage.zsync/NMCLauncher-Linux-aarch64-*-aarch64.AppImage.zsync NMCLauncher-Linux-aarch64.AppImage.zsync
+          mv NMCLauncher-Linux-aarch64+LTO-*-Release-aarch64.AppImage/NMCLauncher-Linux-aarch64+LTO-*-Release-aarch64.AppImage NMCLauncher-Linux-aarch64+LTO.AppImage
+          mv NMCLauncher-Linux-aarch64+LTO-*-Release-aarch64.AppImage.zsync/NMCLauncher-Linux-aarch64+LTO-*-aarch64.AppImage.zsync NMCLauncher-Linux-aarch64+LTO.AppImage.zsync
+
+          # macOS
+          mv NMCLauncher-macOS-*/NMCLauncher.zip NMCLauncher-macOS-${{ env.VERSION }}.zip
+          mv NMCLauncher-macOS+LTO-*/NMCLauncher.zip NMCLauncher-macOS+LTO-${{ env.VERSION }}.zip
 
           tar --exclude='.git' -czf NMCLauncher-${{ env.VERSION }}.tar.gz NMCLauncher-${{ env.VERSION }}
 
@@ -48,9 +67,11 @@ jobs:
             ARM64="$(echo -n ${d} | grep -o arm64 || true)"
             INST="$(echo -n ${d} | grep -o Setup || true)"
             PORT="$(echo -n ${d} | grep -o Portable || true)"
+            LTO="$(echo -n ${d} | grep -o LTO || true)"
             NAME="NMCLauncher-Windows-MSVC"
             test -z "${LEGACY}" || NAME="${NAME}-Legacy"
             test -z "${ARM64}" || NAME="${NAME}-arm64"
+            test -z "${LTO}" || NAME="${NAME}+LTO"
             test -z "${PORT}" || NAME="${NAME}-Portable"
             test -z "${INST}" || mv NMCLauncher-*.exe ../${NAME}-Setup-${{ env.VERSION }}.exe
             test -n "${INST}" || zip -r -9 "../${NAME}-${{ env.VERSION }}.zip" *
@@ -61,7 +82,9 @@ jobs:
             cd "${d}" || continue
             INST="$(echo -n ${d} | grep -o Setup || true)"
             PORT="$(echo -n ${d} | grep -o Portable || true)"
+            LTO="$(echo -n ${d} | grep -o LTO || true)"
             NAME="NMCLauncher-Windows-MinGW-w64"
+            test -z "${LTO}" || NAME="${NAME}+LTO"
             test -z "${PORT}" || NAME="${NAME}-Portable"
             test -z "${INST}" || mv NMCLauncher-*.exe ../${NAME}-Setup-${{ env.VERSION }}.exe
             test -n "${INST}" || zip -r -9 "../${NAME}-${{ env.VERSION }}.zip" *
@@ -91,13 +114,25 @@ jobs:
           files: |
             NMCLauncher-Linux-x86_64.AppImage
             NMCLauncher-Linux-x86_64.AppImage.zsync
+            NMCLauncher-Linux+LTO-x86_64.AppImage
+            NMCLauncher-Linux+LTO-x86_64.AppImage.zsync
+            NMCLauncher-Linux-Clang-x86_64.AppImage
+            NMCLauncher-Linux-Clang-x86_64.AppImage.zsync
             NMCLauncher-Linux-aarch64.AppImage
             NMCLauncher-Linux-aarch64.AppImage.zsync
+            NMCLauncher-Linux-aarch64+LTO.AppImage
+            NMCLauncher-Linux-aarch64+LTO.AppImage.zsync
             NMCLauncher-Linux-Qt6-Portable-${{ env.VERSION }}.tar.gz
+            NMCLauncher-Linux+LTO-Qt6-Portable-${{ env.VERSION }}.tar.gz
+            NMCLauncher-Linux-Clang-Qt6-Portable-${{ env.VERSION }}.tar.gz
             NMCLauncher-Linux-aarch64-Qt6-Portable-${{ env.VERSION }}.tar.gz
+            NMCLauncher-Linux-aarch64+LTO-Qt6-Portable-${{ env.VERSION }}.tar.gz
             NMCLauncher-Windows-MinGW-w64-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MinGW-w64-Portable-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MinGW-w64-Setup-${{ env.VERSION }}.exe
+            NMCLauncher-Windows-MinGW-w64+LTO-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-MinGW-w64+LTO-Portable-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-MinGW-w64+LTO-Setup-${{ env.VERSION }}.exe
             NMCLauncher-Windows-MinGW-arm64-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MinGW-arm64-Portable-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MinGW-arm64-Setup-${{ env.VERSION }}.exe
@@ -107,5 +142,9 @@ jobs:
             NMCLauncher-Windows-MSVC-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC-Portable-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC-Setup-${{ env.VERSION }}.exe
+            NMCLauncher-Windows-MSVC+LTO-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-MSVC+LTO-Portable-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-MSVC+LTO-Setup-${{ env.VERSION }}.exe
             NMCLauncher-macOS-${{ env.VERSION }}.zip
+            NMCLauncher-macOS+LTO-${{ env.VERSION }}.zip
             NMCLauncher-${{ env.VERSION }}.tar.gz

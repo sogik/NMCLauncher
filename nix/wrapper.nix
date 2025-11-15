@@ -61,14 +61,10 @@ symlinkJoin {
 
   nativeBuildInputs = [ kdePackages.wrapQtAppsHook ];
 
-  buildInputs =
-    [
-      kdePackages.qtbase
-      kdePackages.qtsvg
-    ]
-    ++ lib.optional (
-      lib.versionAtLeast kdePackages.qtbase.version "6" && stdenv.hostPlatform.isLinux
-    ) kdePackages.qtwayland;
+  buildInputs = [
+    kdePackages.qtbase
+    kdePackages.qtsvg
+  ] ++ lib.optional (lib.versionAtLeast kdePackages.qtbase.version "6" && stdenv.hostPlatform.isLinux) kdePackages.qtwayland;
 
   postBuild = ''
     wrapQtAppsHook
@@ -113,14 +109,17 @@ symlinkJoin {
       ] ++ additionalPrograms;
 
     in
-    [ "--prefix PRISMLAUNCHER_JAVA_PATHS : ${lib.makeSearchPath "bin/java" jdks}" ]
+    [
+      "--prefix PRISMLAUNCHER_JAVA_PATHS : ${lib.makeSearchPath "bin/java" jdks}"
+    ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       "--set LD_LIBRARY_PATH ${addDriverRunpath.driverLink}/lib:${lib.makeLibraryPath runtimeLibs}"
       "--prefix PATH : ${lib.makeBinPath runtimePrograms}"
     ];
 
   meta = {
-    inherit (nmclauncher'.meta)
+    inherit
+      (nmclauncher'.meta)
       description
       longDescription
       homepage

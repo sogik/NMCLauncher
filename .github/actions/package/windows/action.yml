@@ -122,15 +122,28 @@ runs:
           Write-Host "::warning:: nmclauncher_updater.exe not found in $env:INSTALL_DIR"
           Write-Host "Checking build directory for updater..."
           
-          # Try to find and copy updater from build directory
+          # Candidate updater locations (each Join-Path parenthesized to ensure a string result)
           $possibleLocations = @(
-            Join-Path $env:BUILD_DIR "Release\nmclauncher_updater.exe",
-            Join-Path $env:BUILD_DIR "Debug\nmclauncher_updater.exe",
-            Join-Path $env:BUILD_DIR "nmclauncher_updater.exe"
+            (Join-Path $env:BUILD_DIR 'Release\nmclauncher_updater.exe'),
+            (Join-Path $env:BUILD_DIR 'Debug\nmclauncher_updater.exe'),
+            (Join-Path $env:BUILD_DIR 'nmclauncher_updater.exe')
           )
+          
+          Write-Host "Searching for updater in: $($possibleLocations -join ', ')"
+          
           $found = $null
           foreach ($p in $possibleLocations) {
             if (Test-Path $p) { $found = $p; break }
+          }
+          
+          # Fallback: search build tree if not found in common locations
+          if (-not $found) {
+            Write-Host "Updater not found in candidate locations; searching build tree..."
+            $hit = Get-ChildItem $env:BUILD_DIR -Recurse -Filter 'nmclauncher_updater.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($hit) {
+              $found = $hit.FullName
+              Write-Host "Found updater at: $found"
+            }
           }
           
           if ($found) {

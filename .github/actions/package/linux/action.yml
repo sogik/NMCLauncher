@@ -67,7 +67,12 @@ runs:
         mv ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/metainfo/org.sogik.NMCLauncher.metainfo.xml ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/metainfo/org.sogik.NMCLauncher.appdata.xml
         export "NO_APPSTREAM=1" # we have to skip appstream checking because appstream on ubuntu 20.04 is outdated
 
-        export OUTPUT="NMCLauncher-Linux-$APPIMAGE_ARCH.AppImage"
+        # Use artifact-name to differentiate between build variants (Linux, Linux+LTO, Linux-Clang, etc.)
+        ARTIFACT_SUFFIX=""
+        if [ -n "${{ inputs.artifact-name }}" ]; then
+          ARTIFACT_SUFFIX="-${{ inputs.artifact-name }}"
+        fi
+        export OUTPUT="NMCLauncher${ARTIFACT_SUFFIX}-$APPIMAGE_ARCH.AppImage"
 
         chmod +x linuxdeploy-*.AppImage
 
@@ -108,7 +113,12 @@ runs:
         chmod +x AppImageUpdate-"$APPIMAGE_ARCH".AppImage
         cp AppImageUpdate-"$APPIMAGE_ARCH".AppImage ${{ env.INSTALL_APPIMAGE_DIR }}/usr/bin
 
-        export UPDATE_INFORMATION="gh-releases-zsync|${{ github.repository_owner }}|${{ github.event.repository.name }}|latest|NMCLauncher-Linux-$APPIMAGE_ARCH.AppImage.zsync"
+        # Update information with variant suffix for zsync
+        ARTIFACT_SUFFIX=""
+        if [ -n "${{ inputs.artifact-name }}" ]; then
+          ARTIFACT_SUFFIX="-${{ inputs.artifact-name }}"
+        fi
+        export UPDATE_INFORMATION="gh-releases-zsync|${{ github.repository_owner }}|${{ github.event.repository.name }}|latest|NMCLauncher${ARTIFACT_SUFFIX}-$APPIMAGE_ARCH.AppImage.zsync"
 
         if [ '${{ inputs.gpg-private-key-id }}' != '' ]; then
           export SIGN=1
@@ -122,7 +132,12 @@ runs:
 
         ./linuxdeploy-"$APPIMAGE_ARCH".AppImage --appdir ${{ env.INSTALL_APPIMAGE_DIR }} --output appimage --plugin qt -i ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/icons/hicolor/scalable/apps/org.sogik.NMCLauncher.svg
 
-        mv "NMCLauncher-Linux-$APPIMAGE_ARCH.AppImage" "NMCLauncher-Linux-${{ env.VERSION }}-${{ inputs.build-type }}-$APPIMAGE_ARCH.AppImage"
+        # Rename with artifact-name suffix to match expected output
+        ARTIFACT_SUFFIX=""
+        if [ -n "${{ inputs.artifact-name }}" ]; then
+          ARTIFACT_SUFFIX="-${{ inputs.artifact-name }}"
+        fi
+        mv "NMCLauncher-Linux-$APPIMAGE_ARCH.AppImage" "NMCLauncher${ARTIFACT_SUFFIX}-${{ env.VERSION }}-${{ inputs.build-type }}-$APPIMAGE_ARCH.AppImage"
 
     - name: Package portable tarball
       shell: bash
@@ -149,11 +164,11 @@ runs:
     - name: Upload AppImage
       uses: actions/upload-artifact@v4
       with:
-        name: NMCLauncher-${{ runner.os }}-${{ inputs.version }}-${{ inputs.build-type }}-${{ env.APPIMAGE_ARCH }}.AppImage
-        path: NMCLauncher-${{ runner.os }}-${{ inputs.version }}-${{ inputs.build-type }}-${{ env.APPIMAGE_ARCH }}.AppImage
+        name: NMCLauncher-${{ inputs.artifact-name }}-${{ inputs.version }}-${{ inputs.build-type }}-${{ env.APPIMAGE_ARCH }}.AppImage
+        path: NMCLauncher-${{ inputs.artifact-name }}-${{ inputs.version }}-${{ inputs.build-type }}-${{ env.APPIMAGE_ARCH }}.AppImage
 
     - name: Upload AppImage Zsync
       uses: actions/upload-artifact@v4
       with:
-        name: NMCLauncher-${{ runner.os }}-${{ inputs.version }}-${{ inputs.build-type }}-${{ env.APPIMAGE_ARCH }}.AppImage.zsync
-        path: NMCLauncher-${{ runner.os }}-${{ env.APPIMAGE_ARCH }}.AppImage.zsync
+        name: NMCLauncher-${{ inputs.artifact-name }}-${{ inputs.version }}-${{ inputs.build-type }}-${{ env.APPIMAGE_ARCH }}.AppImage.zsync
+        path: NMCLauncher-${{ inputs.artifact-name }}-${{ env.APPIMAGE_ARCH }}.AppImage.zsync
