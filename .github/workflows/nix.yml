@@ -131,6 +131,10 @@ jobs:
         run: |
           nix flake update
 
+      - name: Format Nix files
+        run: |
+          nix run nixpkgs#nixpkgs-fmt -- nix/wrapper.nix nix/unwrapped.nix
+
       - name: Run Flake checks
         run: |
           nix flake check --print-build-logs --show-trace

@@ -37,14 +37,20 @@ runs:
         # Fixup architecture naming for AppImages
         dpkg_arch="$(dpkg-architecture -q DEB_HOST_ARCH_CPU)"
         case "$dpkg_arch" in
-          "amd64")
+          amd64)
             APPIMAGE_ARCH="x86_64"
             ;;
-          "arm64")
+          arm64)
             APPIMAGE_ARCH="aarch64"
             ;;
+          i386|i686)
+            APPIMAGE_ARCH="i386"
+            ;;
+          armhf|armv7l)
+            APPIMAGE_ARCH="armhf"
+            ;;
           *)
-            echo "# 🚨 The Debian architecture \"$deb_arch\" is not recognized!" >> "$GITHUB_STEP_SUMMARY"
+            echo "# 🚨 The Debian architecture \"$dpkg_arch\" is not recognized!" >> "$GITHUB_STEP_SUMMARY"
             exit 1
             ;;
         esac
@@ -74,7 +80,27 @@ runs:
         fi
         export OUTPUT="NMCLauncher${ARTIFACT_SUFFIX}-$APPIMAGE_ARCH.AppImage"
 
-        chmod +x linuxdeploy-*.AppImage
+        # Ensure linuxdeploy AppImage exists or attempt to download for this arch
+        LD_FILE="$(ls linuxdeploy-*.AppImage 2>/dev/null | head -n1 || true)"
+        if [ -z "$LD_FILE" ]; then
+          echo "::warning::linuxdeploy AppImage not present; attempting to download for $APPIMAGE_ARCH"
+          case "$APPIMAGE_ARCH" in
+            x86_64) LD_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20250213-2/linuxdeploy-x86_64.AppImage" ;;
+            aarch64) LD_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20250213-2/linuxdeploy-aarch64.AppImage" ;;
+            i386) LD_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-i386.AppImage" ;;
+            *) LD_URL="" ;;
+          esac
+          if [ -n "$LD_URL" ]; then
+            curl -L -o linuxdeploy-$APPIMAGE_ARCH.AppImage "$LD_URL"
+            chmod +x linuxdeploy-$APPIMAGE_ARCH.AppImage
+            LD_FILE="linuxdeploy-$APPIMAGE_ARCH.AppImage"
+          else
+            echo "::error::No linuxdeploy AppImage available for $APPIMAGE_ARCH"
+            exit 1
+          fi
+        else
+          chmod +x "$LD_FILE"
+        fi
 
         mkdir -p ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib
         mkdir -p ${{ env.INSTALL_APPIMAGE_DIR }}/usr/plugins/iconengines
@@ -110,8 +136,14 @@ runs:
         LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib"
         export LD_LIBRARY_PATH
 
-        chmod +x AppImageUpdate-"$APPIMAGE_ARCH".AppImage
-        cp AppImageUpdate-"$APPIMAGE_ARCH".AppImage ${{ env.INSTALL_APPIMAGE_DIR }}/usr/bin
+        # Make AppImageUpdate optional (copy if present)
+        if [ -f "AppImageUpdate-$APPIMAGE_ARCH.AppImage" ]; then
+          chmod +x "AppImageUpdate-$APPIMAGE_ARCH.AppImage"
+          cp "AppImageUpdate-$APPIMAGE_ARCH.AppImage" "${{ env.INSTALL_APPIMAGE_DIR }}/usr/bin/" || true
+          echo "✅ Added AppImageUpdate-$APPIMAGE_ARCH.AppImage"
+        else
+          echo "::warning::AppImageUpdate-$APPIMAGE_ARCH.AppImage not found; skipping"
+        fi
 
         # Update information with variant suffix for zsync
         ARTIFACT_SUFFIX=""
@@ -130,14 +162,47 @@ runs:
           echo ":warning: Skipped code signing for Linux AppImage, as gpg key was not present." >> $GITHUB_STEP_SUMMARY
         fi
 
-        ./linuxdeploy-"$APPIMAGE_ARCH".AppImage --appdir ${{ env.INSTALL_APPIMAGE_DIR }} --output appimage --plugin qt -i ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/icons/hicolor/scalable/apps/org.sogik.NMCLauncher.svg
+        # Run linuxdeploy and capture exit code
+        "$LD_FILE" --appdir ${{ env.INSTALL_APPIMAGE_DIR }} --output appimage --plugin qt -i ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/icons/hicolor/scalable/apps/org.sogik.NMCLauncher.svg
+        linuxdeploy_rc=$?
+        echo "linuxdeploy exit code: $linuxdeploy_rc"
+
+        if [ $linuxdeploy_rc -ne 0 ]; then
+          echo "::error::linuxdeploy failed with exit code $linuxdeploy_rc"
+          echo "Current directory contents:"
+          ls -la
+          echo "install-appdir contents:"
+          ls -la ${{ env.INSTALL_APPIMAGE_DIR }} || true
+          # Show log if available
+          if [ -f linuxdeploy.log ]; then
+            echo "---- linuxdeploy.log (last 200 lines) ----"
+            tail -n 200 linuxdeploy.log || true
+          fi
+          exit $linuxdeploy_rc
+        fi
+
+        # Find the produced AppImage (exclude tool AppImages)
+        found=$(ls -1 *.AppImage 2>/dev/null | grep -Ev '(linuxdeploy|AppImageUpdate|plugin-qt)' | head -n1 || true)
+
+        if [ -z "$found" ]; then
+          echo "::error::AppImage not found. Searching for any NMCLauncher AppImage..."
+          echo "Current directory contents:"
+          ls -la
+          echo "All AppImages found:"
+          ls -1 *.AppImage 2>/dev/null || echo "No AppImages found"
+          echo "install-appdir contents:"
+          ls -la ${{ env.INSTALL_APPIMAGE_DIR }} || true
+          exit 1
+        fi
+
+        echo "Found AppImage: $found"
 
         # Rename with artifact-name suffix to match expected output
         ARTIFACT_SUFFIX=""
         if [ -n "${{ inputs.artifact-name }}" ]; then
           ARTIFACT_SUFFIX="-${{ inputs.artifact-name }}"
         fi
-        mv "NMCLauncher-Linux-$APPIMAGE_ARCH.AppImage" "NMCLauncher${ARTIFACT_SUFFIX}-${{ env.VERSION }}-${{ inputs.build-type }}-$APPIMAGE_ARCH.AppImage"
+        mv "$found" "NMCLauncher${ARTIFACT_SUFFIX}-${{ env.VERSION }}-${{ inputs.build-type }}-$APPIMAGE_ARCH.AppImage"
 
     - name: Package portable tarball
       shell: bash
