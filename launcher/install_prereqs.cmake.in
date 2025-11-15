@@ -1,5 +1,15 @@
 set(CMAKE_MODULE_PATH "@CMAKE_MODULE_PATH@")
-file(GLOB_RECURSE    QTPLUGINS "${CMAKE_INSTALL_PREFIX}/@PLUGIN_DEST_DIR@/*@CMAKE_SHARED_LIBRARY_SUFFIX@")
+
+# Collect Qt plugins, but exclude Sparkle framework internals and system libraries
+file(GLOB_RECURSE ALL_PLUGINS "${CMAKE_INSTALL_PREFIX}/@PLUGIN_DEST_DIR@/*@CMAKE_SHARED_LIBRARY_SUFFIX@")
+set(QTPLUGINS "")
+foreach(plugin ${ALL_PLUGINS})
+    # Skip Sparkle framework internals - they will be handled by the framework itself
+    if(NOT plugin MATCHES "Sparkle\\.framework")
+        list(APPEND QTPLUGINS "${plugin}")
+    endif()
+endforeach()
+
 function(gp_resolved_file_type_override resolved_file type_var)
     if(resolved_file MATCHES "^/(usr/)?lib/libQt")
         set(${type_var} other PARENT_SCOPE)
@@ -13,6 +23,9 @@ function(gp_resolved_file_type_override resolved_file type_var)
         set(${type_var} other PARENT_SCOPE)
     elseif((resolved_file MATCHES "^/(usr/)?lib(.+)?/libstdc\\+\\+") AND (UNIX AND NOT APPLE))
         set(${type_var} other PARENT_SCOPE)
+    # Exclude Sparkle framework internals from being treated as external items
+    elseif(resolved_file MATCHES "Sparkle\\.framework/(Versions/[^/]+/)?(Autoupdate|Updater\\.app|XPCServices)")
+        set(${type_var} local PARENT_SCOPE)
     endif()
 endfunction()
 

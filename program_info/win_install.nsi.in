@@ -378,7 +378,7 @@ Section "@Launcher_DisplayName@"
   File /nonfatal "@Launcher_APP_BINARY_NAME@_updater.exe"
   File "qt.conf"
   File "qtlogging.ini"
-  File *.dll
+  File /nonfatal *.dll
   File /r "iconengines"
   File /r "imageformats"
   File /r "jars"
