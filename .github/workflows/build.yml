@@ -5,6 +5,7 @@ on:
     branches:
       - "dev"
       - "release-*"
+      - "alt-binaries"
     paths:
       # File types
       - "**.cpp"
@@ -235,10 +236,11 @@ jobs:
 
       - name: Get CMake preset
         id: cmake-preset
-        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
+        shell: bash
         env:
           BASE_CMAKE_PRESET: ${{ matrix.base-cmake-preset }}
           PRESET_TYPE: ${{ (inputs.build-type || 'Debug') == 'Debug' && 'debug' || 'ci' }}
+          MSYSTEM: ${{ matrix.msystem }}
         run: |
           echo preset="$BASE_CMAKE_PRESET"_"$PRESET_TYPE" >> "$GITHUB_OUTPUT"
 
