@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15)  # minimum version required by QuaZip
 
 project(Launcher)
 
+# Force rebuild for PR testing
 string(COMPARE EQUAL "${CMAKE_SOURCE_DIR}" "${CMAKE_BUILD_DIR}" IS_IN_SOURCE_BUILD)
 if(IS_IN_SOURCE_BUILD)
     message(FATAL_ERROR "You are building the Launcher in-source. Please separate the build tree from the source tree.")
