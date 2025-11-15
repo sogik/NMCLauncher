@@ -7,6 +7,42 @@ if(IS_IN_SOURCE_BUILD)
     message(FATAL_ERROR "You are building the Launcher in-source. Please separate the build tree from the source tree.")
 endif()
 
+##################################### Performance Optimizations #####################################
+# Enable LTO/IPO for Release builds (5-10% performance gain, smaller binaries)
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+
+if(ipo_supported)
+    message(STATUS "✓ LTO/IPO enabled for Release builds")
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL ON)
+else()
+    message(WARNING "✗ LTO/IPO not supported: ${ipo_error}")
+endif()
+
+# Platform-specific optimizations
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    # GCC-specific optimizations
+    add_compile_options(
+        $<$<CONFIG:Release>:-O2>
+        $<$<CONFIG:Release>:-pipe>
+        $<$<CONFIG:Release>:-fno-plt>
+    )
+    message(STATUS "✓ GCC optimizations enabled")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Clang-specific optimizations
+    add_compile_options(
+        $<$<CONFIG:Release>:-O2>
+        $<$<CONFIG:Release>:-pipe>
+        $<$<CONFIG:Release>:-fno-plt>
+    )
+    message(STATUS "✓ Clang optimizations enabled")
+elseif(MSVC)
+    # MSVC-specific optimizations (handled below in existing MSVC section)
+    message(STATUS "✓ MSVC optimizations will be configured")
+endif()
+
 ##################################### Set CMake options #####################################
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
