@@ -53,7 +53,7 @@ runs:
 
     # TODO(@getchoo): Get this working on MSYS2!
     - name: Setup ccache
-      if: ${{ (runner.os != 'Windows' || inputs.msystem == '') && inputs.build-type == 'Debug' }}
+      if: ${{ (runner.os != 'Windows' || inputs.msystem != '') && inputs.build-type == 'Debug' }}
       uses: hendrikmuhs/ccache-action@v1.2.18
       with:
         variant: sccache
@@ -61,10 +61,9 @@ runs:
         key: ${{ runner.os }}-${{ runner.arch }}-${{ inputs.artifact-name }}-sccache
 
     - name: Use ccache on debug builds
-      if: ${{ inputs.build-type == 'Debug' }}
+      if: ${{ (runner.os != 'Windows' || inputs.msystem != '') && inputs.build-type == 'Debug' }}
       shell: bash
       env:
-        # Only use ccache on MSYS2
         CCACHE_VARIANT: ${{ (runner.os == 'Windows' && inputs.msystem != '') && 'ccache' || 'sccache' }}
       run: |
         echo "CMAKE_C_COMPILER_LAUNCHER=$CCACHE_VARIANT" >> "$GITHUB_ENV"

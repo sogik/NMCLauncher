@@ -95,14 +95,29 @@ jobs:
             cd "${d}" || continue
             INST="$(echo -n ${d} | grep -o Setup || true)"
             PORT="$(echo -n ${d} | grep -o Portable || true)"
+            LTO="$(echo -n ${d} | grep -o LTO || true)"
             NAME="NMCLauncher-Windows-MinGW-arm64"
+            test -z "${LTO}" || NAME="${NAME}+LTO"
             test -z "${PORT}" || NAME="${NAME}-Portable"
             test -z "${INST}" || mv NMCLauncher-*.exe ../${NAME}-Setup-${{ env.VERSION }}.exe
             test -n "${INST}" || zip -r -9 "../${NAME}-${{ env.VERSION }}.zip" *
             cd ..
           done
 
-      - name: Create release
+          for d in NMCLauncher-Windows-Clang*; do
+            cd "${d}" || continue
+            INST="$(echo -n ${d} | grep -o Setup || true)"
+            PORT="$(echo -n ${d} | grep -o Portable || true)"
+            LTO="$(echo -n ${d} | grep -o LTO || true)"
+            NAME="NMCLauncher-Windows-Clang"
+            test -z "${LTO}" || NAME="${NAME}+LTO"
+            test -z "${PORT}" || NAME="${NAME}-Portable"
+            test -z "${INST}" || mv NMCLauncher-*.exe ../${NAME}-Setup-${{ env.VERSION }}.exe
+            test -n "${INST}" || zip -r -9 "../${NAME}-${{ env.VERSION }}.zip" *
+            cd ..
+          done
+
+      - name: Package for macOS
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
@@ -136,15 +151,27 @@ jobs:
             NMCLauncher-Windows-MinGW-arm64-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MinGW-arm64-Portable-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MinGW-arm64-Setup-${{ env.VERSION }}.exe
+            NMCLauncher-Windows-MinGW-arm64+LTO-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-MinGW-arm64+LTO-Portable-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-MinGW-arm64+LTO-Setup-${{ env.VERSION }}.exe
             NMCLauncher-Windows-MSVC-arm64-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC-arm64-Portable-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC-arm64-Setup-${{ env.VERSION }}.exe
+            NMCLauncher-Windows-MSVC-arm64+LTO-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-MSVC-arm64+LTO-Portable-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-MSVC-arm64+LTO-Setup-${{ env.VERSION }}.exe
             NMCLauncher-Windows-MSVC-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC-Portable-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC-Setup-${{ env.VERSION }}.exe
             NMCLauncher-Windows-MSVC+LTO-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC+LTO-Portable-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC+LTO-Setup-${{ env.VERSION }}.exe
+            NMCLauncher-Windows-Clang-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-Clang-Portable-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-Clang-Setup-${{ env.VERSION }}.exe
+            NMCLauncher-Windows-Clang+LTO-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-Clang+LTO-Portable-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-Clang+LTO-Setup-${{ env.VERSION }}.exe
             NMCLauncher-macOS-${{ env.VERSION }}.zip
             NMCLauncher-macOS+LTO-${{ env.VERSION }}.zip
             NMCLauncher-${{ env.VERSION }}.tar.gz

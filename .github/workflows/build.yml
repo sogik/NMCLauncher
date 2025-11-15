@@ -123,6 +123,14 @@ jobs:
             msystem: CLANGARM64
             vcvars-arch: arm64
 
+          # Windows MinGW ARM + LTO
+          - os: windows-11-arm
+            artifact-name: Windows-MinGW-arm64+LTO
+            base-cmake-preset: windows_mingw
+            msystem: CLANGARM64
+            vcvars-arch: arm64
+            enable-lto: true
+
           # Windows MSVC (standard)
           - os: windows-2022
             artifact-name: Windows-MSVC
@@ -143,6 +151,29 @@ jobs:
             vcvars-arch: amd64_arm64
             qt-architecture: win64_msvc2022_arm64_cross_compiled
 
+          # Windows MSVC ARM64 + LTO
+          - os: windows-2022
+            artifact-name: Windows-MSVC-arm64+LTO
+            base-cmake-preset: windows_msvc_arm64_cross
+            vcvars-arch: amd64_arm64
+            qt-architecture: win64_msvc2022_arm64_cross_compiled
+            enable-lto: true
+
+          # Windows Clang
+          - os: windows-2022
+            artifact-name: Windows-Clang
+            base-cmake-preset: windows_msvc
+            vcvars-arch: amd64
+            use-clang: true
+
+          # Windows Clang + LTO
+          - os: windows-2022
+            artifact-name: Windows-Clang+LTO
+            base-cmake-preset: windows_msvc
+            vcvars-arch: amd64
+            use-clang: true
+            enable-lto: true
+
           # macOS (standard)
           - os: macos-14
             artifact-name: macOS
@@ -157,10 +188,6 @@ jobs:
             enable-lto: true
 
     runs-on: ${{ matrix.os }}
-
-    defaults:
-      run:
-        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
 
     env:
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.macosx-deployment-target }}
@@ -193,8 +220,8 @@ jobs:
           vcvars-arch: ${{ matrix.vcvars-arch }}
           qt-architecture: ${{ matrix.qt-architecture }}
         env:
-          CC: ${{ matrix.use-clang && 'clang-18' || '' }}
-          CXX: ${{ matrix.use-clang && 'clang++-18' || '' }}
+          CC: ${{ matrix.use-clang && runner.os == 'Linux' && 'clang-18' || '' }}
+          CXX: ${{ matrix.use-clang && runner.os == 'Linux' && 'clang++-18' || '' }}
 
       - name: Export CurseForge API Key
         run: echo "CURSEFORGE_API_KEY=${{ secrets.CURSEFORGE_API_KEY }}" >> $GITHUB_ENV
@@ -208,20 +235,41 @@ jobs:
 
       - name: Get CMake preset
         id: cmake-preset
+        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
         env:
           BASE_CMAKE_PRESET: ${{ matrix.base-cmake-preset }}
           PRESET_TYPE: ${{ (inputs.build-type || 'Debug') == 'Debug' && 'debug' || 'ci' }}
         run: |
           echo preset="$BASE_CMAKE_PRESET"_"$PRESET_TYPE" >> "$GITHUB_OUTPUT"
 
-      - name: Configure CMake with optimizations
+      - name: Configure CMake with optimizations (Windows MSVC)
+        if: ${{ runner.os == 'Windows' && (matrix.base-cmake-preset == 'windows_msvc' || matrix.base-cmake-preset == 'windows_msvc_arm64_cross') }}
+        shell: cmd
         env:
           CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
           ENABLE_LTO: ${{ matrix.enable-lto || 'false' }}
           USE_CLANG: ${{ matrix.use-clang || 'false' }}
-          CC: ${{ matrix.use-clang && 'clang-18' || '' }}
-          CXX: ${{ matrix.use-clang && 'clang++-18' || '' }}
-        shell: bash
+        run: |
+          set "CMAKE_EXTRA_FLAGS="
+          if "%ENABLE_LTO%"=="true" set "CMAKE_EXTRA_FLAGS=-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON"
+          if "%USE_CLANG%"=="true" (
+            set "CC=clang-cl"
+            set "CXX=clang-cl"
+          )
+          if defined VSINSTALLDIR (
+            call "%VSINSTALLDIR%VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.vcvars-arch }}
+          ) else (
+            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.vcvars-arch }}
+          )
+          cmake --preset "%CMAKE_PRESET%" %CMAKE_EXTRA_FLAGS%
+
+      - name: Configure CMake with optimizations (Linux/macOS/MinGW)
+        if: ${{ runner.os != 'Windows' || (matrix.base-cmake-preset != 'windows_msvc' && matrix.base-cmake-preset != 'windows_msvc_arm64_cross') }}
+        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+          ENABLE_LTO: ${{ matrix.enable-lto || 'false' }}
+          USE_CLANG: ${{ matrix.use-clang || 'false' }}
         run: |
           CMAKE_EXTRA_FLAGS=""
 
@@ -230,12 +278,33 @@ jobs:
           fi
 
           if [ "$USE_CLANG" = "true" ] && [ "${{ runner.os }}" = "Linux" ]; then
+            export CC=clang-18
+            export CXX=clang++-18
             CMAKE_EXTRA_FLAGS="$CMAKE_EXTRA_FLAGS -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld-18"
           fi
 
           cmake --preset "$CMAKE_PRESET" $CMAKE_EXTRA_FLAGS
 
-      - name: Build
+      - name: Build (Windows MSVC)
+        if: ${{ runner.os == 'Windows' && (matrix.base-cmake-preset == 'windows_msvc' || matrix.base-cmake-preset == 'windows_msvc_arm64_cross') }}
+        shell: cmd
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+          ARTIFACT_NAME: ${{ matrix.artifact-name }}-Qt6
+          BUILD_PLATFORM: official
+        run: |
+          if defined VSINSTALLDIR (
+            call "%VSINSTALLDIR%VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.vcvars-arch }}
+          ) else (
+            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.vcvars-arch }}
+          )
+          REM Verify compiler is available
+          cl.exe /? >nul 2>&1 || (echo ERROR: cl.exe not found after vcvars & exit /b 1)
+          cmake --build --preset "%CMAKE_PRESET%" --target all
+
+      - name: Build (Linux/macOS/MinGW)
+        if: ${{ runner.os != 'Windows' || (matrix.base-cmake-preset != 'windows_msvc' && matrix.base-cmake-preset != 'windows_msvc_arm64_cross') }}
+        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
         env:
           CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
           ARTIFACT_NAME: ${{ matrix.artifact-name }}-Qt6
@@ -243,13 +312,38 @@ jobs:
         run: |
           cmake --build --preset "$CMAKE_PRESET" --target all
 
-      - name: Test
+      - name: Test (Windows MSVC)
+        if: ${{ runner.os == 'Windows' && (matrix.base-cmake-preset == 'windows_msvc' || matrix.base-cmake-preset == 'windows_msvc_arm64_cross') }}
+        shell: cmd
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+        run: |
+          if defined VSINSTALLDIR (
+            call "%VSINSTALLDIR%VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.vcvars-arch }}
+          ) else (
+            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.vcvars-arch }}
+          )
+          ctest --preset "%CMAKE_PRESET%" || exit 0
+
+      - name: Test (Linux/macOS/MinGW)
+        if: ${{ runner.os != 'Windows' || (matrix.base-cmake-preset != 'windows_msvc' && matrix.base-cmake-preset != 'windows_msvc_arm64_cross') }}
+        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
         env:
           CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
         run: |
           ctest --preset "$CMAKE_PRESET" || true
 
-      - name: Install
+      - name: Install (Windows MSVC)
+        if: ${{ runner.os == 'Windows' && (matrix.base-cmake-preset == 'windows_msvc' || matrix.base-cmake-preset == 'windows_msvc_arm64_cross') }}
+        shell: cmd
+        env:
+          CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
+        run: |
+          cmake --install build --prefix install
+
+      - name: Install (Linux/macOS/MinGW)
+        if: ${{ runner.os != 'Windows' || (matrix.base-cmake-preset != 'windows_msvc' && matrix.base-cmake-preset != 'windows_msvc_arm64_cross') }}
+        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
         env:
           CMAKE_PRESET: ${{ steps.cmake-preset.outputs.preset }}
         run: |
@@ -261,7 +355,7 @@ jobs:
 
       - name: Get short version
         id: short-version
-        shell: bash
+        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
         run: |
           echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 

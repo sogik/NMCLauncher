@@ -22,5 +22,11 @@ set(gp_cmd_paths ${gp_cmd_paths}
 )
 
 include(BundleUtilities)
+
+# Verify the executable exists before running fixup_bundle
+if(NOT EXISTS "@APPS@")
+    message(FATAL_ERROR "Cannot find executable to fix up: @APPS@")
+endif()
+
 fixup_bundle("@APPS@" "${QTPLUGINS}" "@DIRS@")
 

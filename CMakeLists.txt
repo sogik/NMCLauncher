@@ -425,8 +425,8 @@ if(UNIX AND APPLE)
     set(RESOURCES_DEST_DIR "${Launcher_Name}.app/Contents/Resources")
     set(JARS_DEST_DIR "${Launcher_Name}.app/Contents/MacOS/jars")
 
-    # Apps to bundle
-    set(APPS "\${CMAKE_INSTALL_PREFIX}/${Launcher_Name}.app")
+    # Apps to bundle - must point to the actual executable inside the bundle
+    set(APPS "\${CMAKE_INSTALL_PREFIX}/${Launcher_Name}.app/Contents/MacOS/${Launcher_APP_BINARY_NAME}")
 
     # Mac bundle settings
     set(MACOSX_BUNDLE_BUNDLE_NAME "${Launcher_DisplayName}")
