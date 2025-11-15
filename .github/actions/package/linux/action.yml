@@ -74,7 +74,29 @@ runs:
         mkdir -p ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib
         mkdir -p ${{ env.INSTALL_APPIMAGE_DIR }}/usr/plugins/iconengines
 
-        cp -r ${{ runner.workspace }}/Qt/${{ inputs.qt-version }}/gcc_*64/plugins/iconengines/* ${{ env.INSTALL_APPIMAGE_DIR }}/usr/plugins/iconengines
+        # Locate installed Qt directory that matches inputs.qt-version (e.g. "6" -> "6.8.1")
+        QT_BASE="${{ runner.workspace }}/Qt"
+        QT_DIR=""
+        # direct match first
+        if [ -d "$QT_BASE/${{ inputs.qt-version }}" ]; then
+          QT_DIR="$QT_BASE/${{ inputs.qt-version }}"
+        else
+          # try prefix match (6 -> 6.8.1)
+          QT_DIR=$(find "$QT_BASE" -maxdepth 1 -type d -name "${{ inputs.qt-version }}*" | head -n1 || true)
+        fi
+        if [ -z "$QT_DIR" ] || [ ! -d "$QT_DIR" ]; then
+          echo "# 🚨 Qt directory for version '${{ inputs.qt-version }}' not found under $QT_BASE" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi
+
+        # find matching compiler dir (gcc_64 or gcc_*64)
+        PLUGIN_SRC=$(ls -d "$QT_DIR"/gcc_*64/plugins/iconengines 2>/dev/null | head -n1 || true)
+        if [ -z "$PLUGIN_SRC" ] || [ ! -d "$PLUGIN_SRC" ]; then
+          echo "# 🚨 Qt iconengines not found in $QT_DIR (looked for $QT_DIR/gcc_*64/plugins/iconengines)" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi
+
+        cp -r "$PLUGIN_SRC"/* ${{ env.INSTALL_APPIMAGE_DIR }}/usr/plugins/iconengines
 
         cp /usr/lib/"$DEB_HOST_MULTIARCH"/libcrypto.so.* ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib/
         cp /usr/lib/"$DEB_HOST_MULTIARCH"/libssl.so.* ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib/

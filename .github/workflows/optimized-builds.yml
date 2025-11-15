@@ -19,7 +19,7 @@ jobs:
   # ==========================================
 
   linux-standard:
-    name: Linux/GCC+LTO (Standard)
+    name: Linux/GCC+LTO
     runs-on: ubuntu-22.04
 
     steps:
@@ -67,7 +67,7 @@ jobs:
           path: install/*.tar.gz
 
   linux-clang:
-    name: Linux/Clang+LTO (Alternative)
+    name: Linux/Clang+LTO
     runs-on: ubuntu-22.04
 
     steps:
@@ -130,7 +130,7 @@ jobs:
   # ==========================================
 
   windows-msvc:
-    name: Windows/MSVC+LTO (Standard)
+    name: Windows/MSVC+LTO
     runs-on: windows-2022
 
     steps:
@@ -178,7 +178,7 @@ jobs:
           path: install/*.exe
 
   windows-mingw:
-    name: Windows/MinGW+LTO (Alternative)
+    name: Windows/MinGW+LTO
     runs-on: windows-2022
 
     defaults:
@@ -230,7 +230,7 @@ jobs:
           path: install/*.exe
 
   windows-clang:
-    name: Windows/Clang-CL (Experimental)
+    name: Windows/Clang-CL
     runs-on: windows-2022
 
     steps:
@@ -290,7 +290,7 @@ jobs:
   # ==========================================
 
   macos-universal:
-    name: macOS/Universal+LTO (Intel + Apple Silicon)
+    name: macOS/Universal+LTO
     runs-on: macos-14
 
     env:
@@ -315,18 +315,18 @@ jobs:
 
       - name: Configure CMake with Universal Binary
         run: |
-          cmake --preset macos_universal \
+          cmake --preset macos_universal_release \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
             -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
 
       - name: Build
-        run: cmake --build --preset macos_universal --target all
+        run: cmake --build --preset macos_universal_release --target all
 
       - name: Test (x86_64 only on Intel runner)
         run: |
           # Only run tests for native architecture
-          ctest --preset macos_universal || echo "Some tests may fail on non-native arch"
+          ctest --preset macos_universal_release || echo "Some tests may fail on non-native arch"
 
       - name: Package
         uses: ./.github/actions/package/macos
@@ -345,7 +345,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: NMCLauncher-macOS-Universal-LTO
+          name: NMCLauncher-macOS-LTO
           path: install/*.dmg
 
   # ==========================================

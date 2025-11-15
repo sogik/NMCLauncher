@@ -106,11 +106,44 @@ runs:
         New-Item -Name NSISPlugins -ItemType Directory
         Invoke-Webrequest https://github.com/negrutiu/nsis-nscurl/releases/download/"${{ env.NSCURL_VERSION }}"/NScurl.zip -OutFile NSISPlugins\NScurl.zip
         $nscurl_hash = Get-FileHash NSISPlugins\NScurl.zip -Algorithm Sha256 | Select-Object -ExpandProperty Hash
-        if ( $nscurl_hash -ne "${{ env.nscurl_sha256 }}") {
+        if ( $nscurl_hash -ne "${{ env.NSCURL_SHA256 }}") {
           echo "::error:: NSCurl.zip sha256 mismatch"
           exit 1
         }
         Expand-Archive -Path NSISPlugins\NScurl.zip -DestinationPath NSISPlugins\NScurl
+
+        # Pre-flight check: verify install directory contents
+        Write-Host "📦 Inspecting install directory: $env:INSTALL_DIR"
+        Get-ChildItem $env:INSTALL_DIR -Recurse | Select-Object FullName, Length | ForEach-Object { Write-Host $_.FullName }
+
+        # Check for required files (updater may be optional depending on build config)
+        $updaterPath = Join-Path $env:INSTALL_DIR "nmclauncher_updater.exe"
+        if (-not (Test-Path $updaterPath)) {
+          Write-Host "::warning:: nmclauncher_updater.exe not found in $env:INSTALL_DIR"
+          Write-Host "Checking build directory for updater..."
+          
+          # Try to find and copy updater from build directory
+          $possibleLocations = @(
+            Join-Path $env:BUILD_DIR "Release\nmclauncher_updater.exe",
+            Join-Path $env:BUILD_DIR "Debug\nmclauncher_updater.exe",
+            Join-Path $env:BUILD_DIR "nmclauncher_updater.exe"
+          )
+          $found = $null
+          foreach ($p in $possibleLocations) {
+            if (Test-Path $p) { $found = $p; break }
+          }
+          
+          if ($found) {
+            Copy-Item $found $env:INSTALL_DIR
+            Write-Host "✅ Copied updater from $found to $env:INSTALL_DIR"
+          } else {
+            Write-Host "⚠️ Updater not found in build tree - installer may not include auto-update functionality"
+            Write-Host "Build tree contents:"
+            Get-ChildItem $env:BUILD_DIR -Recurse -Filter "*.exe" | ForEach-Object { Write-Host $_.FullName }
+          }
+        } else {
+          Write-Host "✅ Found nmclauncher_updater.exe"
+        }
 
         cd ${{ env.INSTALL_DIR }}
         makensis -NOCD "${{ github.workspace }}/${{ env.BUILD_DIR }}/program_info/win_install.nsi"

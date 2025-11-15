@@ -15,7 +15,7 @@ NMC Launcher is a custom launcher for Minecraft that allows you to easily manage
 
 ## Warning and support
 
-- If you have a problem with the launcher, **open an issue** [here](https://github.com/sogik/NMCLauncher/issues).
+- If you have a problem with the launcher, **open an issue** in the [issue tracker](https://github.com/sogik/NMCLauncher/issues).
 - For questions or discussions, **use** [this discussion forum](https://github.com/sogik/NMCLauncher/discussions).
 - **Do not** request support from the Prism Launcher team for this fork.
 
