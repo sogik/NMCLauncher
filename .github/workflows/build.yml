@@ -104,6 +104,12 @@ jobs:
             vcvars-arch: amd64
 
           - os: windows-2022
+            artifact-name: Windows-Clang
+            base-cmake-preset: windows_msvc
+            vcvars-arch: amd64
+            compiler: clang
+
+          - os: windows-2022
             artifact-name: Windows-MSVC-arm64
             base-cmake-preset: windows_msvc_arm64_cross
             vcvars-arch: amd64_arm64
@@ -143,6 +149,13 @@ jobs:
           vcvars-arch: ${{ matrix.vcvars-arch }}
           qt-architecture: ${{ matrix.qt-architecture }}
 
+      - name: Install Clang (Windows)
+        if: matrix.compiler == 'clang'
+        shell: pwsh
+        run: |
+          choco install llvm --version=17.0.6 -y
+          echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: Export CurseForge API Key
         run: echo "CURSEFORGE_API_KEY=${{ secrets.CURSEFORGE_API_KEY }}" >> $GITHUB_ENV
 
@@ -169,8 +182,16 @@ jobs:
           BUILD_PLATFORM: official
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           MSA_CLIENT_ID: ${{ secrets.MSA_CLIENT_ID }}
+
+          # Enable LTO for all builds
+          CMAKE_C_COMPILER: ${{ matrix.compiler == 'clang' && 'clang-cl' || '' }}
+          CMAKE_CXX_COMPILER: ${{ matrix.compiler == 'clang' && 'clang-cl' || '' }}
         run: |
-          cmake --workflow --preset "$CMAKE_PRESET"
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            cmake --workflow --preset "$CMAKE_PRESET" -DENABLE_LTO=ON -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
+          else
+            cmake --workflow --preset "$CMAKE_PRESET" -DENABLE_LTO=ON
+          fi
 
       ##
       # PACKAGE
