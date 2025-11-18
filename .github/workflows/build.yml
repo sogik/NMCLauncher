@@ -166,6 +166,13 @@ jobs:
       # BUILD
       ##
 
+      - name: List CMake presets (debug)
+        run: |
+          echo "Available CMake presets:"
+          cmake --list-presets=all || true
+          echo "---"
+          echo "Expected preset: ${{ matrix.base-cmake-preset }}_${{ (inputs.build-type || 'Debug') == 'Debug' && 'debug' || 'ci' }}"
+
       - name: Get CMake preset
         id: cmake-preset
         env:
@@ -173,6 +180,7 @@ jobs:
           PRESET_TYPE: ${{ (inputs.build-type || 'Debug') == 'Debug' && 'debug' || 'ci' }}
         run: |
           echo preset="$BASE_CMAKE_PRESET"_"$PRESET_TYPE" >> "$GITHUB_OUTPUT"
+          echo "Using preset: $BASE_CMAKE_PRESET"_"$PRESET_TYPE"
 
       - name: Run CMake workflow
         env:
@@ -182,16 +190,11 @@ jobs:
           BUILD_PLATFORM: official
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           MSA_CLIENT_ID: ${{ secrets.MSA_CLIENT_ID }}
-
-          # Enable LTO for all builds
+          ENABLE_LTO: ON
           CMAKE_C_COMPILER: ${{ matrix.compiler == 'clang' && 'clang-cl' || '' }}
           CMAKE_CXX_COMPILER: ${{ matrix.compiler == 'clang' && 'clang-cl' || '' }}
         run: |
-          if [ "${{ matrix.compiler }}" = "clang" ]; then
-            cmake --workflow --preset "$CMAKE_PRESET" -DENABLE_LTO=ON -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl
-          else
-            cmake --workflow --preset "$CMAKE_PRESET" -DENABLE_LTO=ON
-          fi
+          cmake --workflow --preset "$CMAKE_PRESET"
 
       ##
       # PACKAGE

@@ -9,7 +9,9 @@
 			"installDir": "install",
 			"cacheVariables": {
 				"Launcher_BUILD_ARTIFACT": "$penv{ARTIFACT_NAME}",
-			"Launcher_BUILD_PLATFORM": "$penv{BUILD_PLATFORM}"
+			"Launcher_BUILD_PLATFORM": "$penv{BUILD_PLATFORM}",
+				"CMAKE_C_COMPILER": "$penv{CMAKE_C_COMPILER}",
+				"CMAKE_CXX_COMPILER": "$penv{CMAKE_CXX_COMPILER}"
 			}
 		},
 		{
@@ -19,7 +21,8 @@
 				"base"
 			],
 			"cacheVariables": {
-				"CMAKE_BUILD_TYPE": "Debug"
+				"CMAKE_BUILD_TYPE": "Debug",
+				"ENABLE_LTO": "$penv{ENABLE_LTO}"
 			}
 		},
 		{
