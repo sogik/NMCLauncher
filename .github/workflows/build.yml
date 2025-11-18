@@ -105,7 +105,7 @@ jobs:
 
           - os: windows-2022
             artifact-name: Windows-Clang
-            base-cmake-preset: windows_msvc
+            base-cmake-preset: windows_clang
             vcvars-arch: amd64
             compiler: clang
 
@@ -190,9 +190,6 @@ jobs:
           BUILD_PLATFORM: official
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           MSA_CLIENT_ID: ${{ secrets.MSA_CLIENT_ID }}
-          ENABLE_LTO: ON
-          CMAKE_C_COMPILER: ${{ matrix.compiler == 'clang' && 'clang-cl' || '' }}
-          CMAKE_CXX_COMPILER: ${{ matrix.compiler == 'clang' && 'clang-cl' || '' }}
         run: |
           cmake --workflow --preset "$CMAKE_PRESET"
 
