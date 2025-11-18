@@ -104,6 +104,12 @@ jobs:
             vcvars-arch: amd64
 
           - os: windows-2022
+            artifact-name: Windows-Clang
+            base-cmake-preset: windows_clang
+            vcvars-arch: amd64
+            compiler: clang
+
+          - os: windows-2022
             artifact-name: Windows-MSVC-arm64
             base-cmake-preset: windows_msvc_arm64_cross
             vcvars-arch: amd64_arm64
@@ -143,6 +149,18 @@ jobs:
           vcvars-arch: ${{ matrix.vcvars-arch }}
           qt-architecture: ${{ matrix.qt-architecture }}
 
+      - name: Install Clang (Windows)
+        if: matrix.compiler == 'clang'
+        shell: pwsh
+        run: |
+          $llvmInstalled = choco list --local-only llvm
+          if ($llvmInstalled -match "llvm") {
+            Write-Host "LLVM already installed, skipping installation"
+          } else {
+            choco install llvm -y
+          }
+          echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: Export CurseForge API Key
         run: echo "CURSEFORGE_API_KEY=${{ secrets.CURSEFORGE_API_KEY }}" >> $GITHUB_ENV
 
@@ -153,6 +171,13 @@ jobs:
       # BUILD
       ##
 
+      - name: List CMake presets (debug)
+        run: |
+          echo "Available CMake presets:"
+          cmake --list-presets=all || true
+          echo "---"
+          echo "Expected preset: ${{ matrix.base-cmake-preset }}_${{ (inputs.build-type || 'Debug') == 'Debug' && 'debug' || 'ci' }}"
+
       - name: Get CMake preset
         id: cmake-preset
         env:
@@ -160,6 +185,7 @@ jobs:
           PRESET_TYPE: ${{ (inputs.build-type || 'Debug') == 'Debug' && 'debug' || 'ci' }}
         run: |
           echo preset="$BASE_CMAKE_PRESET"_"$PRESET_TYPE" >> "$GITHUB_OUTPUT"
+          echo "Using preset: $BASE_CMAKE_PRESET"_"$PRESET_TYPE"
 
       - name: Run CMake workflow
         env:

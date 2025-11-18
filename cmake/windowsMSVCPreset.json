@@ -69,6 +69,41 @@
 				"windows_msvc_arm64_cross_base"
 			],
 			"displayName": "Windows MSVC (ARM64 cross, CI)"
+		},
+		{
+			"name": "windows_clang_base",
+			"hidden": true,
+			"inherits": [
+				"windows_msvc_base"
+			],
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "clang-cl",
+				"CMAKE_CXX_COMPILER": "clang-cl"
+			}
+		},
+		{
+			"name": "windows_clang_debug",
+			"inherits": [
+				"base_debug",
+				"windows_clang_base"
+			],
+			"displayName": "Windows Clang (Debug)"
+		},
+		{
+			"name": "windows_clang_release",
+			"inherits": [
+				"base_release",
+				"windows_clang_base"
+			],
+			"displayName": "Windows Clang (Release)"
+		},
+		{
+			"name": "windows_clang_ci",
+			"inherits": [
+				"base_ci",
+				"windows_clang_base"
+			],
+			"displayName": "Windows Clang (CI)"
 		}
 	],
 	"buildPresets": [
@@ -134,6 +169,33 @@
 			"displayName": "Windows MSVC (ARM64 cross, CI)",
 			"configurePreset": "windows_msvc_arm64_cross_ci",
 			"configuration": "Release"
+		},
+		{
+			"name": "windows_clang_debug",
+			"inherits": [
+				"windows_msvc_base"
+			],
+			"displayName": "Windows Clang (Debug)",
+			"configurePreset": "windows_clang_debug",
+			"configuration": "Debug"
+		},
+		{
+			"name": "windows_clang_release",
+			"inherits": [
+				"windows_msvc_base"
+			],
+			"displayName": "Windows Clang (Release)",
+			"configurePreset": "windows_clang_release",
+			"configuration": "Release"
+		},
+		{
+			"name": "windows_clang_ci",
+			"inherits": [
+				"windows_msvc_base"
+			],
+			"displayName": "Windows Clang (CI)",
+			"configurePreset": "windows_clang_ci",
+			"configuration": "Release"
 		}
 	],
 	"testPresets": [
@@ -174,6 +236,36 @@
 			],
 			"displayName": "Windows MSVC (CI)",
 			"configurePreset": "windows_msvc_ci",
+			"configuration": "Release"
+		},
+		{
+			"name": "windows_clang_debug",
+			"inherits": [
+				"base_debug",
+				"windows_msvc_base"
+			],
+			"displayName": "Windows Clang (Debug)",
+			"configurePreset": "windows_clang_debug",
+			"configuration": "Debug"
+		},
+		{
+			"name": "windows_clang_release",
+			"inherits": [
+				"base_release",
+				"windows_msvc_base"
+			],
+			"displayName": "Windows Clang (Release)",
+			"configurePreset": "windows_clang_release",
+			"configuration": "Release"
+		},
+		{
+			"name": "windows_clang_ci",
+			"inherits": [
+				"base_release",
+				"windows_msvc_base"
+			],
+			"displayName": "Windows Clang (CI)",
+			"configurePreset": "windows_clang_ci",
 			"configuration": "Release"
 		}
 	],
@@ -271,6 +363,60 @@
 				{
 					"type": "build",
 					"name": "windows_msvc_arm64_cross_ci"
+				}
+			]
+		},
+		{
+			"name": "windows_clang_debug",
+			"displayName": "Windows Clang (Debug)",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "windows_clang_debug"
+				},
+				{
+					"type": "build",
+					"name": "windows_clang_debug"
+				},
+				{
+					"type": "test",
+					"name": "windows_clang_debug"
+				}
+			]
+		},
+		{
+			"name": "windows_clang_release",
+			"displayName": "Windows Clang (Release)",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "windows_clang_release"
+				},
+				{
+					"type": "build",
+					"name": "windows_clang_release"
+				},
+				{
+					"type": "test",
+					"name": "windows_clang_release"
+				}
+			]
+		},
+		{
+			"name": "windows_clang_ci",
+			"displayName": "Windows Clang (CI)",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "windows_clang_ci"
+				},
+				{
+					"type": "build",
+					"name": "windows_clang_ci"
+				},
+				{
+					"type": "test",
+					"name": "windows_clang_ci"
 				}
 			]
 		}

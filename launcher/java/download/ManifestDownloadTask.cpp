@@ -94,7 +94,7 @@ void ManifestDownloadTask::downloadJava(const QJsonDocument& doc)
         } else if (type == "file") {
             // TODO download compressed version if it exists ?
             auto raw = Json::ensureObject(Json::ensureObject(meta, "downloads"), "raw");
-            auto isExec = Json::ensureBoolean(meta, "executable", false);
+            auto isExec = Json::ensureBoolean(meta, QStringLiteral("executable"), false);
             auto url = Json::ensureString(raw, "url");
             if (!url.isEmpty() && QUrl(url).isValid()) {
                 auto f = File{ file, url, QByteArray::fromHex(Json::ensureString(raw, "sha1").toLatin1()), isExec };
