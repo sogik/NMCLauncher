@@ -269,7 +269,7 @@ set(Launcher_MSA_CLIENT_ID $ENV{MSA_CLIENT_ID} CACHE STRING "Client ID you can g
 # https://support.curseforge.com/en/support/solutions/articles/9000207405-curse-forge-3rd-party-api-terms-and-conditions
 # NOTE: CurseForge requires you to change this if you make any kind of derivative work.
 # This key was issued specifically for Prism Launcher
-set(Launcher_CURSEFORGE_API_KEY $ENV{CURSEFORGE_API_KEY} CACHE STRING "API key for the CurseForge platform")
+set(Launcher_CURSEFORGE_API_KEY "$2a$10$3KcSGObSoQjmWDLXXIZ9OOTjjMsc4SdTZM2FxxyM/15xWE8.sToqu" CACHE STRING "API key for the CurseForge platform") #$ENV{CURSEFORGE_API_KEY}
 
 set(Launcher_COMPILER_NAME ${CMAKE_CXX_COMPILER_ID})
 set(Launcher_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION})
