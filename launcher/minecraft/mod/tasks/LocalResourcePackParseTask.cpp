@@ -186,14 +186,14 @@ QString buildStyle(const QJsonObject& obj)
     }
     if (obj.contains("bold")) {
         QString weight = "normal";
-        if (Json::ensureBoolean(obj, "bold", false)) {
+        if (Json::ensureBoolean(obj, "bold", false, "bold")) {
             weight = "bold";
         }
         styles << QString("font-weight: %1;").arg(weight);
     }
     if (obj.contains("italic")) {
         QString style = "normal";
-        if (Json::ensureBoolean(obj, "italic", false)) {
+        if (Json::ensureBoolean(obj, "italic", false, "italic")) {
             style = "italic";
         }
         styles << QString("font-style: %1;").arg(style);
