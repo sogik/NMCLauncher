@@ -64,3 +64,6 @@ flatbuild
 
 # Snap
 *.snap
+
+COMPARISON_WITH_PRISM.md
+RELEASE_TEMPLATE.md
