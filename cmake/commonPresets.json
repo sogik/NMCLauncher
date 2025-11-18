@@ -9,9 +9,7 @@
 			"installDir": "install",
 			"cacheVariables": {
 				"Launcher_BUILD_ARTIFACT": "$penv{ARTIFACT_NAME}",
-				"Launcher_BUILD_PLATFORM": "$penv{BUILD_PLATFORM}",
-				"Launcher_CURSEFORGE_API_KEY": "$penv{CURSEFORGE_API_KEY}",
-				"Launcher_MSA_CLIENT_ID": "$penv{MSA_CLIENT_ID}"
+			"Launcher_BUILD_PLATFORM": "$penv{BUILD_PLATFORM}"
 			}
 		},
 		{
