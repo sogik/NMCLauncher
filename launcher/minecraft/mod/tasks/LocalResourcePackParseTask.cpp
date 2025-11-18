@@ -186,14 +186,14 @@ QString buildStyle(const QJsonObject& obj)
     }
     if (obj.contains("bold")) {
         QString weight = "normal";
-        if (Json::ensureBoolean(obj, "bold", false, "bold")) {
+        if (Json::ensureBoolean(obj, QStringLiteral("bold"), false)) {
             weight = "bold";
         }
         styles << QString("font-weight: %1;").arg(weight);
     }
     if (obj.contains("italic")) {
         QString style = "normal";
-        if (Json::ensureBoolean(obj, "italic", false, "italic")) {
+        if (Json::ensureBoolean(obj, QStringLiteral("italic"), false)) {
             style = "italic";
         }
         styles << QString("font-style: %1;").arg(style);
@@ -212,8 +212,8 @@ QString processComponent(const QJsonArray& value, bool strikethrough, bool under
 
 QString processComponent(const QJsonObject& obj, bool strikethrough, bool underline)
 {
-    underline = Json::ensureBoolean(obj, "underlined", underline);
-    strikethrough = Json::ensureBoolean(obj, "strikethrough", strikethrough);
+    underline = Json::ensureBoolean(obj, QStringLiteral("underlined"), underline);
+    strikethrough = Json::ensureBoolean(obj, QStringLiteral("strikethrough"), strikethrough);
 
     QString result = Json::ensureString(obj, "text");
     if (underline) {
