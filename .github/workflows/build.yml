@@ -167,6 +167,8 @@ jobs:
 
           ARTIFACT_NAME: ${{ matrix.artifact-name }}-Qt6
           BUILD_PLATFORM: official
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          MSA_CLIENT_ID: ${{ secrets.MSA_CLIENT_ID }}
         run: |
           cmake --workflow --preset "$CMAKE_PRESET"
 
