@@ -216,6 +216,9 @@ set(Launcher_BUG_TRACKER_URL "https://github.com/sogik/NMCLauncher/issues" CACHE
 set(Launcher_TRANSLATIONS_URL "https://hosted.weblate.org/projects/prismlauncher/launcher/" CACHE STRING "URL for the translations platform.")
 set(Launcher_TRANSLATION_FILES_URL "https://i18n.prismlauncher.org/" CACHE STRING "URL for the translations files.")
 
+# Themes URL
+set(Launcher_THEMES_URL "https://prismlauncher.org/wiki/getting-started/change-themes/" CACHE STRING "URL for the themes guide.")
+
 # Matrix Space
 set(Launcher_MATRIX_URL "" CACHE STRING "URL to the Matrix Space")
 

@@ -100,6 +100,8 @@ class MainWindow : public QMainWindow {
 
     void on_actionMATRIX_triggered();
 
+    void on_actionTHEMES_triggered();
+
     void on_actionDISCORD_triggered();
 
     void on_actionCopyInstance_triggered();

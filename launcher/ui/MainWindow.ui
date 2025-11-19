@@ -221,6 +221,7 @@
     <addaction name="actionMoreNews"/>
     <addaction name="actionCheckUpdate"/>
     <addaction name="actionOpenWiki"/>
+    <addaction name="actionTHEMES"/>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="fileMenu"/>
@@ -616,6 +617,18 @@
   <action name="actionChangeTheme">
    <property name="text">
     <string>Themes</string>
+   </property>
+  </action>
+  <action name="actionTHEMES">
+   <property name="icon">
+    <iconset theme="settings">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Themes Guide</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the themes guide to learn how to customize %1.</string>
    </property>
   </action>
   <action name="actionReportBug">
