@@ -218,10 +218,11 @@
     <addaction name="actionAddToPATH"/>
     <addaction name="separator"/>
     <addaction name="separator"/>
+    <addaction name="actionTHEMES"/>
+    <addaction name="separator"/>
     <addaction name="actionMoreNews"/>
     <addaction name="actionCheckUpdate"/>
     <addaction name="actionOpenWiki"/>
-    <addaction name="actionTHEMES"/>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="fileMenu"/>
