@@ -7,8 +7,6 @@ resources/CMakeFiles
 *.swp
 html/
 
-PollyMc/
-
 # Project Files
 *.pro.user
 CMakeLists.txt.user
@@ -61,6 +59,4 @@ repl-result-*
 # Snap
 *.snap
 
-COMPARISON_WITH_PRISM.md
-RELEASE_TEMPLATE.md
-UPGRADE_TO_10.0_ANALYSIS.md
+cosas/
