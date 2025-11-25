@@ -20,7 +20,7 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: "true"
           path: "NMCLauncher-source"
@@ -51,6 +51,17 @@ jobs:
             NAME="NMCLauncher-Windows-MSVC"
             test -z "${LEGACY}" || NAME="${NAME}-Legacy"
             test -z "${ARM64}" || NAME="${NAME}-arm64"
+            test -z "${PORT}" || NAME="${NAME}-Portable"
+            test -z "${INST}" || mv NMCLauncher-*.exe ../${NAME}-Setup-${{ env.VERSION }}.exe
+            test -n "${INST}" || zip -r -9 "../${NAME}-${{ env.VERSION }}.zip" *
+            cd ..
+          done
+
+          for d in NMCLauncher-Windows-Clang*; do
+            cd "${d}" || continue
+            INST="$(echo -n ${d} | grep -o Setup || true)"
+            PORT="$(echo -n ${d} | grep -o Portable || true)"
+            NAME="NMCLauncher-Windows-Clang"
             test -z "${PORT}" || NAME="${NAME}-Portable"
             test -z "${INST}" || mv NMCLauncher-*.exe ../${NAME}-Setup-${{ env.VERSION }}.exe
             test -n "${INST}" || zip -r -9 "../${NAME}-${{ env.VERSION }}.zip" *
@@ -107,5 +118,8 @@ jobs:
             NMCLauncher-Windows-MSVC-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC-Portable-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC-Setup-${{ env.VERSION }}.exe
+            NMCLauncher-Windows-Clang-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-Clang-Portable-${{ env.VERSION }}.zip
+            NMCLauncher-Windows-Clang-Setup-${{ env.VERSION }}.exe
             NMCLauncher-macOS-${{ env.VERSION }}.zip
             NMCLauncher-${{ env.VERSION }}.tar.gz
