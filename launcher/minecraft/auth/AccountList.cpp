@@ -168,6 +168,26 @@ void AccountList::removeAccount(QModelIndex index)
     }
 }
 
+void AccountList::moveAccount(QModelIndex index, int delta)
+{
+    const int row = index.row();
+    const int newRow = row + delta;
+    if (index.isValid() && row < m_accounts.size() && newRow >= 0 && newRow < m_accounts.size()) {
+        // Qt is stupid, https://doc.qt.io/qt-6/qabstractitemmodel.html#beginMoveRows
+        const int modelDestinationRow = (newRow > row) ? newRow + 1 : newRow;
+
+        if (beginMoveRows(QModelIndex(), row, row, QModelIndex(), modelDestinationRow)) {
+            m_accounts.move(row, newRow);
+            endMoveRows();
+
+            onListChanged();
+        } else {
+            qCritical().noquote() << "AccountList: failed to move account from" << row << "to" << newRow
+                                  << QString("(%1 accounts in total)").arg(this->count());
+        }
+    }
+}
+
 MinecraftAccountPtr AccountList::defaultAccount() const
 {
     return m_defaultAccount;
@@ -260,6 +280,30 @@ int AccountList::count() const
     return m_accounts.count();
 }
 
+QString getAccountStatus(AccountState status)
+{
+    switch (status) {
+        case AccountState::Unchecked:
+            return QObject::tr("Unchecked", "Account status");
+        case AccountState::Offline:
+            return QObject::tr("Offline", "Account status");
+        case AccountState::Online:
+            return QObject::tr("Ready", "Account status");
+        case AccountState::Working:
+            return QObject::tr("Working", "Account status");
+        case AccountState::Errored:
+            return QObject::tr("Errored", "Account status");
+        case AccountState::Expired:
+            return QObject::tr("Expired", "Account status");
+        case AccountState::Disabled:
+            return QObject::tr("Disabled", "Account status");
+        case AccountState::Gone:
+            return QObject::tr("Gone", "Account status");
+        default:
+            return QObject::tr("Unknown", "Account status");
+    }
+}
+
 QVariant AccountList::data(const QModelIndex& index, int role) const
 {
     if (!index.isValid())
@@ -271,15 +315,30 @@ QVariant AccountList::data(const QModelIndex& index, int role) const
     MinecraftAccountPtr account = at(index.row());
 
     switch (role) {
+        case Qt::SizeHintRole:
+            if (index.column() == ProfileNameColumn) {
+                return QSize(0, 30);
+            }
+
+            return QVariant();
+        case Qt::DecorationRole:
+            if (index.column() == ProfileNameColumn) {
+                auto face = account->getFace(24, 24);
+
+                if (!face.isNull()) {
+                    return face;
+                } else {
+                    return QIcon::fromTheme("noaccount").pixmap(24, 24);
+                }
+            }
+
+            return QVariant();
         case Qt::DisplayRole:
             switch (index.column()) {
-                case ProfileNameColumn: {
+                case ProfileNameColumn:
                     return account->profileName();
-                }
-
                 case NameColumn:
                     return account->accountDisplayString();
-
                 case TypeColumn: {
                     switch (account->accountType()) {
                         case AccountType::MSA: {
@@ -291,39 +350,8 @@ QVariant AccountList::data(const QModelIndex& index, int role) const
                     }
                     return tr("Unknown", "Account type");
                 }
-
-                case StatusColumn: {
-                    switch (account->accountState()) {
-                        case AccountState::Unchecked: {
-                            return tr("Unchecked", "Account status");
-                        }
-                        case AccountState::Offline: {
-                            return tr("Offline", "Account status");
-                        }
-                        case AccountState::Online: {
-                            return tr("Ready", "Account status");
-                        }
-                        case AccountState::Working: {
-                            return tr("Working", "Account status");
-                        }
-                        case AccountState::Errored: {
-                            return tr("Errored", "Account status");
-                        }
-                        case AccountState::Expired: {
-                            return tr("Expired", "Account status");
-                        }
-                        case AccountState::Disabled: {
-                            return tr("Disabled", "Account status");
-                        }
-                        case AccountState::Gone: {
-                            return tr("Gone", "Account status");
-                        }
-                        default: {
-                            return tr("Unknown", "Account status");
-                        }
-                    }
-                }
-
+                case StatusColumn:
+                    return getAccountStatus(account->accountState());
                 default:
                     return QVariant();
             }
@@ -335,11 +363,9 @@ QVariant AccountList::data(const QModelIndex& index, int role) const
             return QVariant::fromValue(account);
 
         case Qt::CheckStateRole:
-            if (index.column() == ProfileNameColumn) {
+            if (index.column() == ProfileNameColumn)
                 return account == m_defaultAccount ? Qt::Checked : Qt::Unchecked;
-            } else {
-                return QVariant();
-            }
+            return QVariant();
 
         default:
             return QVariant();
@@ -461,18 +487,14 @@ bool AccountList::loadList()
 
     // Make sure the format version matches.
     auto listVersion = root.value("formatVersion").toVariant().toInt();
-    switch (listVersion) {
-        case AccountListVersion::MojangMSA: {
-            return loadV3(root);
-        } break;
-        default: {
-            QString newName = "accounts-old.json";
-            qWarning() << "Unknown format version when loading account list. Existing one will be renamed to" << newName;
-            // Attempt to rename the old version.
-            file.rename(newName);
-            return false;
-        }
-    }
+    if (listVersion == AccountListVersion::MojangMSA)
+        return loadV3(root);
+
+    QString newName = "accounts-old.json";
+    qWarning() << "Unknown format version when loading account list. Existing one will be renamed to" << newName;
+    // Attempt to rename the old version.
+    file.rename(newName);
+    return false;
 }
 
 bool AccountList::loadV3(QJsonObject& root)
@@ -689,7 +711,7 @@ void AccountList::beginActivity()
 void AccountList::endActivity()
 {
     if (m_activityCount == 0) {
-        qWarning() << m_name << " - Activity count would become below zero";
+        qWarning() << "Activity count would become below zero";
         return;
     }
     bool deactivating = m_activityCount == 1;

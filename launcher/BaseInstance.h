@@ -38,7 +38,9 @@
 #pragma once
 #include <cassert>
 
+#include <QDataStream>
 #include <QDateTime>
+#include <QList>
 #include <QMenu>
 #include <QObject>
 #include <QProcess>
@@ -50,7 +52,6 @@
 #include "BaseVersionList.h"
 #include "MessageLevel.h"
 #include "minecraft/auth/MinecraftAccount.h"
-#include "pathmatcher/IPathMatcher.h"
 #include "settings/INIFile.h"
 
 #include "net/Mode.h"
@@ -63,8 +64,19 @@ class Task;
 class LaunchTask;
 class BaseInstance;
 
-// pointer for lazy people
-using InstancePtr = std::shared_ptr<BaseInstance>;
+/// Shortcut saving target representations
+enum class ShortcutTarget { Desktop, Applications, Other };
+
+/// Shortcut data representation
+struct ShortcutData {
+    QString name;
+    QString filePath;
+    ShortcutTarget target = ShortcutTarget::Other;
+};
+
+/// Console settings
+int getConsoleMaxLines(SettingsObject* settings);
+bool shouldStopOnConsoleOverflow(SettingsObject* settings);
 
 /*!
  * \brief Base class for instances.
@@ -74,11 +86,11 @@ using InstancePtr = std::shared_ptr<BaseInstance>;
  * To create a new instance type, create a new class inheriting from this class
  * and implement the pure virtual functions.
  */
-class BaseInstance : public QObject, public std::enable_shared_from_this<BaseInstance> {
+class BaseInstance : public QObject {
     Q_OBJECT
    protected:
     /// no-touchy!
-    BaseInstance(SettingsObjectPtr globalSettings, SettingsObjectPtr settings, const QString& rootDir);
+    BaseInstance(SettingsObject* globalSettings, std::unique_ptr<SettingsObject> settings, const QString& rootDir);
 
    public: /* types */
     enum class Status {
@@ -88,7 +100,7 @@ class BaseInstance : public QObject, public std::enable_shared_from_this<BaseIns
 
    public:
     /// virtual destructor to make sure the destruction is COMPLETE
-    virtual ~BaseInstance() {}
+    virtual ~BaseInstance();
 
     virtual void saveNow() = 0;
 
@@ -126,6 +138,14 @@ class BaseInstance : public QObject, public std::enable_shared_from_this<BaseIns
     QString name() const;
     void setName(QString val);
 
+    /// Sync name and rename instance dir accordingly; returns true if successful
+    bool syncInstanceDirName(const QString& newRoot) const;
+
+    /// Register a created shortcut
+    void registerShortcut(const ShortcutData& data);
+    QList<ShortcutData> shortcuts() const;
+    void setShortcuts(const QList<ShortcutData>& shortcuts);
+
     /// Value used for instance window titles
     QString windowTitle() const;
 
@@ -147,9 +167,6 @@ class BaseInstance : public QObject, public std::enable_shared_from_this<BaseIns
     QString getManagedPackVersionName() const;
     void setManagedPack(const QString& type, const QString& id, const QString& name, const QString& versionId, const QString& version);
     void copyManagedPack(BaseInstance& other);
-
-    /// guess log level from a line of game log
-    virtual MessageLevel::Enum guessLevel([[maybe_unused]] const QString& line, MessageLevel::Enum level) { return level; }
 
     virtual QStringList extraArguments();
 
@@ -173,7 +190,7 @@ class BaseInstance : public QObject, public std::enable_shared_from_this<BaseIns
      *
      * \return A pointer to this instance's settings object.
      */
-    virtual SettingsObjectPtr settings();
+    virtual SettingsObject* settings();
 
     /*!
      * \brief Loads settings specific to an instance type if they're not already loaded.
@@ -184,10 +201,10 @@ class BaseInstance : public QObject, public std::enable_shared_from_this<BaseIns
     virtual QList<Task::Ptr> createUpdateTask() = 0;
 
     /// returns a valid launcher (task container)
-    virtual shared_qobject_ptr<LaunchTask> createLaunchTask(AuthSessionPtr account, MinecraftTarget::Ptr targetToJoin) = 0;
+    virtual LaunchTask* createLaunchTask(AuthSessionPtr account, MinecraftTarget::Ptr targetToJoin) = 0;
 
     /// returns the current launch task (if any)
-    shared_qobject_ptr<LaunchTask> getLaunchTask();
+    LaunchTask* getLaunchTask();
 
     /*!
      * Create envrironment variables for running the instance
@@ -196,14 +213,9 @@ class BaseInstance : public QObject, public std::enable_shared_from_this<BaseIns
     virtual QProcessEnvironment createLaunchEnvironment() = 0;
 
     /*!
-     * Returns a matcher that can maps relative paths within the instance to whether they are 'log files'
-     */
-    virtual IPathMatcher::Ptr getLogFileMatcher() = 0;
-
-    /*!
      * Returns the root folder to use for looking up log files
      */
-    virtual QString getLogFileRoot() = 0;
+    virtual QStringList getLogFileSearchPaths() = 0;
 
     virtual QString getStatusbarDescription() = 0;
 
@@ -260,19 +272,18 @@ class BaseInstance : public QObject, public std::enable_shared_from_this<BaseIns
 
     Status currentStatus() const;
 
-    int getConsoleMaxLines() const;
-    bool shouldStopOnConsoleOverflow() const;
-
     QStringList getLinkedInstances() const;
     void setLinkedInstances(const QStringList& list);
     void addLinkedInstanceId(const QString& id);
     bool removeLinkedInstanceId(const QString& id);
     bool isLinkedToInstanceId(const QString& id) const;
 
+    bool isLegacy();
+
    protected:
     void changeStatus(Status newStatus);
 
-    SettingsObjectPtr globalSettings() const { return m_global_settings.lock(); }
+    SettingsObject* globalSettings() const { return m_global_settings; }
 
     bool isSpecificSettingsLoaded() const { return m_specific_settings_loaded; }
     void setSpecificSettingsLoaded(bool loaded) { m_specific_settings_loaded = loaded; }
@@ -283,7 +294,7 @@ class BaseInstance : public QObject, public std::enable_shared_from_this<BaseIns
      */
     void propertiesChanged(BaseInstance* inst);
 
-    void launchTaskChanged(shared_qobject_ptr<LaunchTask>);
+    void launchTaskChanged(LaunchTask*);
 
     void runningStatusChanged(bool running);
 
@@ -296,10 +307,10 @@ class BaseInstance : public QObject, public std::enable_shared_from_this<BaseIns
 
    protected: /* data */
     QString m_rootDir;
-    SettingsObjectPtr m_settings;
+    std::unique_ptr<SettingsObject> m_settings;
     // InstanceFlags m_flags;
     bool m_isRunning = false;
-    shared_qobject_ptr<LaunchTask> m_launchProcess;
+    std::unique_ptr<LaunchTask> m_launchProcess;
     QDateTime m_timeStarted;
     RuntimeContext m_runtimeContext;
 
@@ -309,7 +320,7 @@ class BaseInstance : public QObject, public std::enable_shared_from_this<BaseIns
     bool m_hasUpdate = false;
     bool m_hasBrokenVersion = false;
 
-    SettingsObjectWeakPtr m_global_settings;
+    SettingsObject* m_global_settings;
     bool m_specific_settings_loaded = false;
 };
 

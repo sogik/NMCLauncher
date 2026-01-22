@@ -25,9 +25,11 @@
 #include <QtConcurrentRun>
 #include "Json.h"
 #include "MMCZip.h"
+#include "archive/ExportToZipTask.h"
 #include "minecraft/PackProfile.h"
 #include "minecraft/mod/MetadataHandler.h"
 #include "minecraft/mod/ModFolderModel.h"
+#include "modplatform/ModIndex.h"
 #include "modplatform/helpers/HashUtils.h"
 #include "tasks/Task.h"
 
@@ -38,15 +40,15 @@ ModrinthPackExportTask::ModrinthPackExportTask(const QString& name,
                                                const QString& version,
                                                const QString& summary,
                                                bool optionalFiles,
-                                               InstancePtr instance,
+                                               BaseInstance* instance,
                                                const QString& output,
-                                               MMCZip::FilterFunction filter)
+                                               MMCZip::FilterFileFunction filter)
     : name(name)
     , version(version)
     , summary(summary)
     , optionalFiles(optionalFiles)
     , instance(instance)
-    , mcInstance(dynamic_cast<MinecraftInstance*>(instance.get()))
+    , mcInstance(dynamic_cast<MinecraftInstance*>(instance))
     , gameRoot(instance->gameRoot())
     , output(output)
     , filter(filter)
@@ -63,7 +65,6 @@ bool ModrinthPackExportTask::abort()
 {
     if (task) {
         task->abort();
-        emitAborted();
         return true;
     }
     return false;
@@ -85,7 +86,7 @@ void ModrinthPackExportTask::collectFiles()
 
     if (mcInstance) {
         mcInstance->loaderModList()->update();
-        connect(mcInstance->loaderModList().get(), &ModFolderModel::updateFinished, this, &ModrinthPackExportTask::collectHashes);
+        connect(mcInstance->loaderModList(), &ModFolderModel::updateFinished, this, &ModrinthPackExportTask::collectHashes);
     } else
         collectHashes();
 }
@@ -123,7 +124,7 @@ void ModrinthPackExportTask::collectHashes()
             modIter != allMods.end()) {
             const Mod* mod = *modIter;
             if (mod->metadata() != nullptr) {
-                QUrl& url = mod->metadata()->url;
+                const QUrl& url = mod->metadata()->url;
                 // ensure the url is permitted on modrinth.com
                 if (!url.isEmpty() && BuildConfig.MODRINTH_MRPACK_HOSTS.contains(url.host())) {
                     qDebug() << "Resolving" << relative << "from index";
@@ -155,14 +156,15 @@ void ModrinthPackExportTask::makeApiRequest()
     else {
         setStatus(tr("Finding versions for hashes..."));
         auto response = std::make_shared<QByteArray>();
-        task = api.currentVersions(pendingHashes.values(), "sha512", response);
-        connect(task.get(), &Task::succeeded, [this, response]() { parseApiResponse(response); });
+        task = api.currentVersions(pendingHashes.values(), "sha512", response.get());
+        connect(task.get(), &Task::succeeded, [this, response]() { parseApiResponse(response.get()); });
         connect(task.get(), &Task::failed, this, &ModrinthPackExportTask::emitFailed);
+        connect(task.get(), &Task::aborted, this, &ModrinthPackExportTask::emitAborted);
         task->start();
     }
 }
 
-void ModrinthPackExportTask::parseApiResponse(const std::shared_ptr<QByteArray> response)
+void ModrinthPackExportTask::parseApiResponse(QByteArray* response)
 {
     task = nullptr;
 
@@ -199,7 +201,7 @@ void ModrinthPackExportTask::buildZip()
 {
     setStatus(tr("Adding files..."));
 
-    auto zipTask = makeShared<MMCZip::ExportToZipTask>(output, gameRoot, files, "overrides/", true, true);
+    auto zipTask = makeShared<MMCZip::ExportToZipTask>(output, gameRoot, files, "overrides/", true);
     zipTask->addExtraFile("modrinth.index.json", generateIndex());
 
     zipTask->setExcludeFiles(resolvedFiles.keys());
@@ -289,7 +291,7 @@ QByteArray ModrinthPackExportTask::generateIndex()
 
         // a server side mod does not imply that the mod does not work on the client
         // however, if a mrpack mod is marked as server-only it will not install on the client
-        if (iterator->side == Metadata::ModSide::ClientSide)
+        if (iterator->side == ModPlatform::Side::ClientSide)
             env["server"] = "unsupported";
 
         fileOut["env"] = env;

@@ -50,24 +50,30 @@ struct InstanceName;
 
 using InstanceId = QString;
 using GroupId = QString;
-using InstanceLocator = std::pair<InstancePtr, int>;
+using InstanceLocator = std::pair<BaseInstance*, int>;
 
 enum class InstCreateError { NoCreateError = 0, NoSuchVersion, UnknownCreateError, InstExists, CantCreateDir };
 
 enum class GroupsState { NotLoaded, Steady, Dirty };
+
+struct TrashShortcutItem {
+    ShortcutData data;
+    QString trashPath;
+};
 
 struct TrashHistoryItem {
     QString id;
     QString path;
     QString trashPath;
     QString groupName;
+    QList<TrashShortcutItem> shortcuts;
 };
 
 class InstanceList : public QAbstractListModel {
     Q_OBJECT
 
    public:
-    explicit InstanceList(SettingsObjectPtr settings, const QString& instDir, QObject* parent = 0);
+    explicit InstanceList(SettingsObject* settings, const QString& instDir, QObject* parent = 0);
     virtual ~InstanceList();
 
    public:
@@ -90,17 +96,17 @@ class InstanceList : public QAbstractListModel {
      */
     enum InstListError { NoError = 0, UnknownError };
 
-    InstancePtr at(int i) const { return m_instances.at(i); }
+    BaseInstance* at(int i) const { return m_instances.at(i).get(); }
 
-    int count() const { return m_instances.count(); }
+    int count() const { return m_instances.size(); }
 
     InstListError loadList();
     void saveNow();
 
     /* O(n) */
-    InstancePtr getInstanceById(QString id) const;
+    BaseInstance* getInstanceById(QString id) const;
     /* O(n) */
-    InstancePtr getInstanceByManagedName(const QString& managed_name) const;
+    BaseInstance* getInstanceByManagedName(const QString& managed_name) const;
     QModelIndex getInstanceIndexById(const QString& id) const;
     QStringList getGroups();
     bool isGroupCollapsed(const QString& groupName);
@@ -111,8 +117,8 @@ class InstanceList : public QAbstractListModel {
     void deleteGroup(const GroupId& name);
     void renameGroup(const GroupId& src, const GroupId& dst);
     bool trashInstance(const InstanceId& id);
-    bool trashedSomething();
-    void undoTrashInstance();
+    bool trashedSomething() const;
+    bool undoTrashInstance();
     void deleteInstance(const InstanceId& id);
 
     // Wrap an instance creation task in some more task machinery and make it ready to be used
@@ -173,11 +179,11 @@ class InstanceList : public QAbstractListModel {
     void updateTotalPlayTime();
     void suspendWatch();
     void resumeWatch();
-    void add(const QList<InstancePtr>& list);
+    void add(std::vector<std::unique_ptr<BaseInstance>>& list);
     void loadGroupList();
     void saveGroupList();
     QList<InstanceId> discoverInstances();
-    InstancePtr loadInstance(const InstanceId& id);
+    std::unique_ptr<BaseInstance> loadInstance(const InstanceId& id);
 
     void increaseGroupCount(const QString& group);
     void decreaseGroupCount(const QString& group);
@@ -186,11 +192,11 @@ class InstanceList : public QAbstractListModel {
     int m_watchLevel = 0;
     int totalPlayTime = 0;
     bool m_dirty = false;
-    QList<InstancePtr> m_instances;
+    std::vector<std::unique_ptr<BaseInstance>> m_instances;
     // id -> refs
     QMap<QString, int> m_groupNameCache;
 
-    SettingsObjectPtr m_globalSettings;
+    SettingsObject* m_globalSettings;
     QString m_instDir;
     QFileSystemWatcher* m_watcher;
     // FIXME: this is so inefficient that looking at it is almost painful.

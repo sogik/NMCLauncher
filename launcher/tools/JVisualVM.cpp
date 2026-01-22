@@ -10,21 +10,21 @@
 class JVisualVM : public BaseProfiler {
     Q_OBJECT
    public:
-    JVisualVM(SettingsObjectPtr settings, InstancePtr instance, QObject* parent = 0);
+    JVisualVM(SettingsObject* settings, BaseInstance* instance, QObject* parent = 0);
 
    private slots:
     void profilerStarted();
     void profilerFinished(int exit, QProcess::ExitStatus status);
 
    protected:
-    void beginProfilingImpl(shared_qobject_ptr<LaunchTask> process);
+    void beginProfilingImpl(LaunchTask* process);
 };
 
-JVisualVM::JVisualVM(SettingsObjectPtr settings, InstancePtr instance, QObject* parent) : BaseProfiler(settings, instance, parent) {}
+JVisualVM::JVisualVM(SettingsObject* settings, BaseInstance* instance, QObject* parent) : BaseProfiler(settings, instance, parent) {}
 
 void JVisualVM::profilerStarted()
 {
-    emit readyToLaunch(tr("JVisualVM started"));
+    emit readyToLaunch(tr("VisualVM started"));
 }
 
 void JVisualVM::profilerFinished([[maybe_unused]] int exit, QProcess::ExitStatus status)
@@ -38,7 +38,7 @@ void JVisualVM::profilerFinished([[maybe_unused]] int exit, QProcess::ExitStatus
     }
 }
 
-void JVisualVM::beginProfilingImpl(shared_qobject_ptr<LaunchTask> process)
+void JVisualVM::beginProfilingImpl(LaunchTask* process)
 {
     QProcess* profiler = new QProcess(this);
     QStringList profilerArgs = { "--openpid", QString::number(process->pid()) };
@@ -48,13 +48,13 @@ void JVisualVM::beginProfilingImpl(shared_qobject_ptr<LaunchTask> process)
     profiler->setProgram(programPath);
 
     connect(profiler, &QProcess::started, this, &JVisualVM::profilerStarted);
-    connect(profiler, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &JVisualVM::profilerFinished);
+    connect(profiler, &QProcess::finished, this, &JVisualVM::profilerFinished);
 
     profiler->start();
     m_profilerProcess = profiler;
 }
 
-void JVisualVMFactory::registerSettings(SettingsObjectPtr settings)
+void JVisualVMFactory::registerSettings(SettingsObject* settings)
 {
     QString defaultValue = QStandardPaths::findExecutable("jvisualvm");
     if (defaultValue.isNull()) {
@@ -64,7 +64,7 @@ void JVisualVMFactory::registerSettings(SettingsObjectPtr settings)
     globalSettings = settings;
 }
 
-BaseExternalTool* JVisualVMFactory::createTool(InstancePtr instance, QObject* parent)
+BaseExternalTool* JVisualVMFactory::createTool(BaseInstance* instance, QObject* parent)
 {
     return new JVisualVM(globalSettings, instance, parent);
 }
@@ -82,7 +82,7 @@ bool JVisualVMFactory::check(const QString& path, QString* error)
     }
     QFileInfo finfo(path);
     if (!finfo.isExecutable() || !finfo.fileName().contains("visualvm")) {
-        *error = QObject::tr("Invalid path to JVisualVM");
+        *error = QObject::tr("Invalid path to VisualVM");
         return false;
     }
     return true;

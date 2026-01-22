@@ -42,8 +42,8 @@ void XboxAuthorizationStep::perform()
         { "Accept", "application/json" },
     };
     m_response.reset(new QByteArray());
-    m_request = Net::Upload::makeByteArray(url, m_response, xbox_auth_data.toUtf8());
-    m_request->addHeaderProxy(new Net::RawHeaderProxy(headers));
+    m_request = Net::Upload::makeByteArray(url, m_response.get(), xbox_auth_data.toUtf8());
+    m_request->addHeaderProxy(std::make_unique<Net::RawHeaderProxy>(headers));
 
     m_task.reset(new NetJob("XboxAuthorizationStep", APPLICATION->network()));
     m_task->setAskRetry(false);
@@ -115,13 +115,13 @@ bool XboxAuthorizationStep::processSTSError()
         switch (errorCode) {
             case 2148916233: {
                 emit finished(AccountTaskState::STATE_FAILED_SOFT,
-                              tr("This Microsoft account does not have an XBox Live profile. Buy the game on %1 first.")
+                              tr("This Microsoft account does not have an Xbox Live profile. Buy the game on %1 first.")
                                   .arg("<a href=\"https://www.minecraft.net/en-us/store/minecraft-java-edition\">minecraft.net</a>"));
                 return true;
             }
             case 2148916235: {
                 // NOTE: this is the Grulovia error
-                emit finished(AccountTaskState::STATE_FAILED_SOFT, tr("XBox Live is not available in your country. You've been blocked."));
+                emit finished(AccountTaskState::STATE_FAILED_SOFT, tr("Xbox Live is not available in your country. You've been blocked."));
                 return true;
             }
             case 2148916238: {

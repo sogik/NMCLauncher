@@ -37,7 +37,6 @@
 
 #include <QMainWindow>
 
-#include <Application.h>
 #include <LoggedProcess.h>
 #include "minecraft/MinecraftInstance.h"
 #include "ui/pages/BasePage.h"
@@ -53,11 +52,11 @@ class WorldListPage : public QMainWindow, public BasePage {
     Q_OBJECT
 
    public:
-    explicit WorldListPage(InstancePtr inst, std::shared_ptr<WorldList> worlds, QWidget* parent = 0);
+    explicit WorldListPage(MinecraftInstance* inst, WorldList* worlds, QWidget* parent = 0);
     virtual ~WorldListPage();
 
     virtual QString displayName() const override { return tr("Worlds"); }
-    virtual QIcon icon() const override { return APPLICATION->getThemedIcon("worlds"); }
+    virtual QIcon icon() const override { return QIcon::fromTheme("worlds"); }
     virtual QString id() const override { return "worlds"; }
     virtual QString helpPage() const override { return "Worlds"; }
     virtual bool shouldDisplay() const override;
@@ -72,7 +71,7 @@ class WorldListPage : public QMainWindow, public BasePage {
     QMenu* createPopupMenu() override;
 
    protected:
-    InstancePtr m_inst;
+    MinecraftInstance* m_inst;
 
    private:
     QModelIndex getSelectedWorld();
@@ -82,11 +81,12 @@ class WorldListPage : public QMainWindow, public BasePage {
 
    private:
     Ui::WorldListPage* ui;
-    std::shared_ptr<WorldList> m_worlds;
+    WorldList* m_worlds;
     unique_qobject_ptr<LoggedProcess> m_mceditProcess;
     bool m_mceditStarting = false;
 
     std::shared_ptr<Setting> m_wide_bar_setting = nullptr;
+    std::unique_ptr<DataPackFolderModel> m_datapackModel;
 
    private slots:
     void on_actionCopy_Seed_triggered();
@@ -97,7 +97,7 @@ class WorldListPage : public QMainWindow, public BasePage {
     void on_actionRename_triggered();
     void on_actionRefresh_triggered();
     void on_actionView_Folder_triggered();
-    void on_actionDatapacks_triggered();
+    void on_actionData_Packs_triggered();
     void on_actionReset_Icon_triggered();
     void worldChanged(const QModelIndex& current, const QModelIndex& previous);
     void mceditState(LoggedProcess::State state);

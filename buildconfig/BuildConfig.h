@@ -52,13 +52,15 @@ class Config {
     QString LAUNCHER_DOMAIN;
     QString LAUNCHER_CONFIGFILE;
     QString LAUNCHER_GIT;
-    QString LAUNCHER_DESKTOPFILENAME;
+    QString LAUNCHER_APPID;
     QString LAUNCHER_SVGFILENAME;
 
     /// The major version number.
     int VERSION_MAJOR;
     /// The minor version number.
     int VERSION_MINOR;
+    /// The patch version number.
+    int VERSION_PATCH;
 
     /**
      * The version channel
@@ -104,9 +106,6 @@ class Config {
 
     /// User-Agent to use.
     QString USER_AGENT;
-
-    /// User-Agent to use for uncached requests.
-    QString USER_AGENT_UNCACHED;
 
     /// The git commit hash of this build
     QString GIT_COMMIT;
@@ -165,10 +164,10 @@ class Config {
     QString TRANSLATIONS_URL;
     QString MATRIX_URL;
     QString DISCORD_URL;
-    QString THEMES_URL;
     QString SUBREDDIT_URL;
+    QString THEMES_URL;
 
-    QString RESOURCE_BASE = "https://resources.download.minecraft.net/";
+    QString DEFAULT_RESOURCE_BASE = "https://resources.download.minecraft.net/";
     QString LIBRARY_BASE = "https://libraries.minecraft.net/";
     QString IMGUR_BASE_URL = "https://api.imgur.com/3/";
     QString FMLLIBS_BASE_URL;

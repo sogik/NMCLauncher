@@ -114,7 +114,7 @@ class MinecraftAccount : public QObject, public Usable {
 
     bool isActive() const;
 
-    [[nodiscard]] AccountType accountType() const noexcept { return data.type; }
+    AccountType accountType() const noexcept { return data.type; }
 
     bool ownsMinecraft() const { return data.type != AccountType::Offline && data.minecraftEntitlement.ownsMinecraft; }
 
@@ -135,7 +135,7 @@ class MinecraftAccount : public QObject, public Usable {
         }
     }
 
-    QPixmap getFace() const;
+    QPixmap getFace(int width = 64, int height = 64) const;
 
     //! Returns the current state of the account
     AccountState accountState() const;

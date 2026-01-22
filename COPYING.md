@@ -1,7 +1,7 @@
 ## NMC Launcher
 
      NMC Launcher - Minecraft Launcher
-     Copyright (C) 2025 sogik
+     Copyright (C) 2026 sogik
 
      This program is free software and is licensed under the BSD 3-Clause License.
 
@@ -29,6 +29,23 @@
      CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
      OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+## Prism Launcher
+
+     Prism Launcher - Minecraft Launcher
+     Copyright (C) 2022-2026 Prism Launcher Contributors
+
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, version 3.
+
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License
+     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     This file incorporates work covered by the following copyright and
     permission notice:

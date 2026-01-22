@@ -50,11 +50,13 @@ class LaunchController : public Task {
     LaunchController();
     virtual ~LaunchController() = default;
 
-    void setInstance(InstancePtr instance) { m_instance = instance; }
+    void setInstance(BaseInstance* instance) { m_instance = instance; }
 
-    InstancePtr instance() { return m_instance; }
+    BaseInstance* instance() { return m_instance; }
 
     void setOnline(bool online) { m_online = online; }
+
+    void setOfflineName(const QString& offlineName) { m_offlineName = offlineName; }
 
     void setDemo(bool demo) { m_demo = demo; }
 
@@ -74,8 +76,7 @@ class LaunchController : public Task {
     void login();
     void launchInstance();
     void decideAccount();
-    bool askPlayDemo();
-    QString askOfflineName(QString playerName, bool demo, bool& ok);
+    bool reauthenticateAccount(MinecraftAccountPtr account);
 
    private slots:
     void readyForLaunch();
@@ -87,12 +88,13 @@ class LaunchController : public Task {
    private:
     BaseProfilerFactory* m_profiler = nullptr;
     bool m_online = true;
+    QString m_offlineName;
     bool m_demo = false;
-    InstancePtr m_instance;
+    BaseInstance* m_instance;
     QWidget* m_parentWidget = nullptr;
     InstanceWindow* m_console = nullptr;
     MinecraftAccountPtr m_accountToUse = nullptr;
     AuthSessionPtr m_session;
-    shared_qobject_ptr<LaunchTask> m_launcher;
+    LaunchTask* m_launcher;
     MinecraftTarget::Ptr m_targetToJoin;
 };

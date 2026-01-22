@@ -36,6 +36,7 @@
 
 #pragma once
 #include <java/JavaVersion.h>
+#include <minecraft/mod/DataPackFolderModel.h>
 #include <QDir>
 #include <QProcess>
 #include "BaseInstance.h"
@@ -48,15 +49,15 @@ class ResourcePackFolderModel;
 class ShaderPackFolderModel;
 class TexturePackFolderModel;
 class WorldList;
-class GameOptions;
 class LaunchStep;
+class LaunchProfile;
 class PackProfile;
 
 class MinecraftInstance : public BaseInstance {
     Q_OBJECT
    public:
-    MinecraftInstance(SettingsObjectPtr globalSettings, SettingsObjectPtr settings, const QString& rootDir);
-    virtual ~MinecraftInstance() = default;
+    MinecraftInstance(SettingsObject* globalSettings, std::unique_ptr<SettingsObject> settings, const QString& rootDir);
+    virtual ~MinecraftInstance();
     virtual void saveNow() override;
 
     void loadSpecificSettings() override;
@@ -80,6 +81,7 @@ class MinecraftInstance : public BaseInstance {
     QString modsRoot() const override;
     QString coreModsDir() const;
     QString nilModsDir() const;
+    QString dataPacksDir();
     QString modsCacheLocation() const;
     QString libDir() const;
     QString worldDir() const;
@@ -102,26 +104,27 @@ class MinecraftInstance : public BaseInstance {
     QString getLocalLibraryPath() const;
 
     /** Returns whether the instance, with its version, has support for demo mode. */
-    [[nodiscard]] bool supportsDemo() const;
+    bool supportsDemo() const;
 
     void updateRuntimeContext() override;
 
     //////  Profile management //////
-    std::shared_ptr<PackProfile> getPackProfile() const;
+    PackProfile* getPackProfile() const;
 
     //////  Mod Lists  //////
-    std::shared_ptr<ModFolderModel> loaderModList();
-    std::shared_ptr<ModFolderModel> coreModList();
-    std::shared_ptr<ModFolderModel> nilModList();
-    std::shared_ptr<ResourcePackFolderModel> resourcePackList();
-    std::shared_ptr<TexturePackFolderModel> texturePackList();
-    std::shared_ptr<ShaderPackFolderModel> shaderPackList();
-    std::shared_ptr<WorldList> worldList();
-    std::shared_ptr<GameOptions> gameOptionsModel();
+    ModFolderModel* loaderModList();
+    ModFolderModel* coreModList();
+    ModFolderModel* nilModList();
+    ResourcePackFolderModel* resourcePackList();
+    TexturePackFolderModel* texturePackList();
+    ShaderPackFolderModel* shaderPackList();
+    DataPackFolderModel* dataPackList();
+    QList<ResourceFolderModel*> resourceLists();
+    WorldList* worldList();
 
     //////  Launch stuff //////
     QList<Task::Ptr> createUpdateTask() override;
-    shared_qobject_ptr<LaunchTask> createLaunchTask(AuthSessionPtr account, MinecraftTarget::Ptr targetToJoin) override;
+    LaunchTask* createLaunchTask(AuthSessionPtr account, MinecraftTarget::Ptr targetToJoin) override;
     QStringList extraArguments() override;
     QStringList verboseDescription(AuthSessionPtr session, MinecraftTarget::Ptr targetToJoin) override;
     QList<Mod*> getJarMods() const;
@@ -138,12 +141,7 @@ class MinecraftInstance : public BaseInstance {
     QProcessEnvironment createEnvironment() override;
     QProcessEnvironment createLaunchEnvironment() override;
 
-    /// guess log level from a line of minecraft log
-    MessageLevel::Enum guessLevel(const QString& line, MessageLevel::Enum level) override;
-
-    IPathMatcher::Ptr getLogFileMatcher() override;
-
-    QString getLogFileRoot() override;
+    QStringList getLogFileSearchPaths() override;
 
     QString getStatusbarDescription() override;
 
@@ -161,17 +159,16 @@ class MinecraftInstance : public BaseInstance {
 
    protected:
     QMap<QString, QString> createCensorFilterFromSession(AuthSessionPtr session);
+    QMap<QString, QString> makeProfileVarMapping(std::shared_ptr<LaunchProfile> profile) const;
 
    protected:  // data
-    std::shared_ptr<PackProfile> m_components;
-    mutable std::shared_ptr<ModFolderModel> m_loader_mod_list;
-    mutable std::shared_ptr<ModFolderModel> m_core_mod_list;
-    mutable std::shared_ptr<ModFolderModel> m_nil_mod_list;
-    mutable std::shared_ptr<ResourcePackFolderModel> m_resource_pack_list;
-    mutable std::shared_ptr<ShaderPackFolderModel> m_shader_pack_list;
-    mutable std::shared_ptr<TexturePackFolderModel> m_texture_pack_list;
-    mutable std::shared_ptr<WorldList> m_world_list;
-    mutable std::shared_ptr<GameOptions> m_game_options;
+    std::unique_ptr<PackProfile> m_components;
+    std::unique_ptr<ModFolderModel> m_loader_mod_list;
+    std::unique_ptr<ModFolderModel> m_core_mod_list;
+    std::unique_ptr<ModFolderModel> m_nil_mod_list;
+    std::unique_ptr<ResourcePackFolderModel> m_resource_pack_list;
+    std::unique_ptr<ShaderPackFolderModel> m_shader_pack_list;
+    std::unique_ptr<TexturePackFolderModel> m_texture_pack_list;
+    std::unique_ptr<DataPackFolderModel> m_data_pack_list;
+    std::unique_ptr<WorldList> m_world_list;
 };
-
-using MinecraftInstancePtr = std::shared_ptr<MinecraftInstance>;

@@ -41,7 +41,6 @@
 
 #include "ui/pages/BasePage.h"
 
-#include "Application.h"
 #include "minecraft/auth/AccountList.h"
 
 namespace Ui {
@@ -59,9 +58,9 @@ class AccountListPage : public QMainWindow, public BasePage {
     QString displayName() const override { return tr("Accounts"); }
     QIcon icon() const override
     {
-        auto icon = APPLICATION->getThemedIcon("accounts");
+        auto icon = QIcon::fromTheme("accounts");
         if (icon.isNull()) {
-            icon = APPLICATION->getThemedIcon("noaccount");
+            icon = QIcon::fromTheme("noaccount");
         }
         return icon;
     }
@@ -77,6 +76,8 @@ class AccountListPage : public QMainWindow, public BasePage {
     void on_actionSetDefault_triggered();
     void on_actionNoDefault_triggered();
     void on_actionManageSkins_triggered();
+    void on_actionMoveUp_triggered();
+    void on_actionMoveDown_triggered();
 
     void listChanged();
 
@@ -89,6 +90,6 @@ class AccountListPage : public QMainWindow, public BasePage {
    private:
     void changeEvent(QEvent* event) override;
     QMenu* createPopupMenu() override;
-    shared_qobject_ptr<AccountList> m_accounts;
+    AccountList* m_accounts;
     Ui::AccountListPage* ui;
 };

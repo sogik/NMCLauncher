@@ -20,7 +20,7 @@ class ExternalResourcesPage : public QMainWindow, public BasePage {
     Q_OBJECT
 
    public:
-    explicit ExternalResourcesPage(BaseInstance* instance, std::shared_ptr<ResourceFolderModel> model, QWidget* parent = nullptr);
+    explicit ExternalResourcesPage(BaseInstance* instance, ResourceFolderModel* model, QWidget* parent = nullptr);
     virtual ~ExternalResourcesPage();
 
     virtual QString displayName() const override = 0;
@@ -42,9 +42,8 @@ class ExternalResourcesPage : public QMainWindow, public BasePage {
     QMenu* createPopupMenu() override;
 
    public slots:
-    bool current(const QModelIndex& current, const QModelIndex& previous);
-
-    virtual bool onSelectionChanged(const QModelIndex& current, const QModelIndex& previous);
+    virtual void updateActions();
+    virtual void updateFrame(const QModelIndex& current, const QModelIndex& previous);
 
    protected slots:
     void itemActivated(const QModelIndex& index);
@@ -57,6 +56,8 @@ class ExternalResourcesPage : public QMainWindow, public BasePage {
     virtual void enableItem();
     virtual void disableItem();
 
+    virtual void viewHomepage();
+
     virtual void viewFolder();
     virtual void viewConfigs();
 
@@ -67,7 +68,7 @@ class ExternalResourcesPage : public QMainWindow, public BasePage {
     BaseInstance* m_instance = nullptr;
 
     Ui::ExternalResourcesPage* ui = nullptr;
-    std::shared_ptr<ResourceFolderModel> m_model;
+    ResourceFolderModel* m_model;
     QSortFilterProxyModel* m_filterModel = nullptr;
 
     QString m_fileSelectionFilter;

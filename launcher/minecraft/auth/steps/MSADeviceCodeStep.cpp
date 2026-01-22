@@ -67,8 +67,8 @@ void MSADeviceCodeStep::perform()
         { "Accept", "application/json" },
     };
     m_response.reset(new QByteArray());
-    m_request = Net::Upload::makeByteArray(url, m_response, payload);
-    m_request->addHeaderProxy(new Net::RawHeaderProxy(headers));
+    m_request = Net::Upload::makeByteArray(url, m_response.get(), payload);
+    m_request->addHeaderProxy(std::make_unique<Net::RawHeaderProxy>(headers));
 
     m_task.reset(new NetJob("MSADeviceCodeStep", APPLICATION->network()));
     m_task->setAskRetry(false);
@@ -105,9 +105,8 @@ DeviceAuthorizationResponse parseDeviceAuthorizationResponse(const QByteArray& d
     }
     auto obj = doc.object();
     return {
-        Json::ensureString(obj, "device_code"),       Json::ensureString(obj, "user_code"), Json::ensureString(obj, "verification_uri"),
-        Json::ensureInteger(obj, "expires_in"),       Json::ensureInteger(obj, "interval"), Json::ensureString(obj, "error"),
-        Json::ensureString(obj, "error_description"),
+        obj["device_code"].toString(), obj["user_code"].toString(), obj["verification_uri"].toString(),  obj["expires_in"].toInt(),
+        obj["interval"].toInt(),       obj["error"].toString(),     obj["error_description"].toString(),
     };
 }
 
@@ -182,8 +181,8 @@ void MSADeviceCodeStep::authenticateUser()
         { "Accept", "application/json" },
     };
     m_response.reset(new QByteArray());
-    m_request = Net::Upload::makeByteArray(url, m_response, payload);
-    m_request->addHeaderProxy(new Net::RawHeaderProxy(headers));
+    m_request = Net::Upload::makeByteArray(url, m_response.get(), payload);
+    m_request->addHeaderProxy(std::make_unique<Net::RawHeaderProxy>(headers));
 
     connect(m_request.get(), &Task::finished, this, &MSADeviceCodeStep::authenticationFinished);
 
@@ -217,12 +216,12 @@ AuthenticationResponse parseAuthenticationResponse(const QByteArray& data)
         return {};
     }
     auto obj = doc.object();
-    return { Json::ensureString(obj, "access_token"),
-             Json::ensureString(obj, "token_type"),
-             Json::ensureString(obj, "refresh_token"),
-             Json::ensureInteger(obj, "expires_in"),
-             Json::ensureString(obj, "error"),
-             Json::ensureString(obj, "error_description"),
+    return { obj["access_token"].toString(),
+             obj["token_type"].toString(),
+             obj["refresh_token"].toString(),
+             obj["expires_in"].toInt(),
+             obj["error"].toString(),
+             obj["error_description"].toString(),
              obj.toVariantMap() };
 }
 
@@ -273,5 +272,5 @@ void MSADeviceCodeStep::authenticationFinished()
     m_data->msaToken.extra = rsp.extra;
     m_data->msaToken.refresh_token = rsp.refresh_token;
     m_data->msaToken.token = rsp.access_token;
-    emit finished(AccountTaskState::STATE_WORKING, tr("Got"));
+    emit finished(AccountTaskState::STATE_WORKING, tr("Got MSA token"));
 }

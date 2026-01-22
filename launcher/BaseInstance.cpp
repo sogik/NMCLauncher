@@ -42,8 +42,10 @@
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QRegularExpression>
 
+#include "Application.h"
+#include "Json.h"
+#include "launch/LaunchTask.h"
 #include "settings/INISettingsObject.h"
 #include "settings/OverrideSetting.h"
 #include "settings/Setting.h"
@@ -52,9 +54,26 @@
 #include "Commandline.h"
 #include "FileSystem.h"
 
-BaseInstance::BaseInstance(SettingsObjectPtr globalSettings, SettingsObjectPtr settings, const QString& rootDir) : QObject()
+int getConsoleMaxLines(SettingsObject* settings)
 {
-    m_settings = settings;
+    auto lineSetting = settings->getSetting("ConsoleMaxLines");
+    bool conversionOk = false;
+    int maxLines = lineSetting->get().toInt(&conversionOk);
+    if (!conversionOk) {
+        maxLines = lineSetting->defValue().toInt();
+        qWarning() << "ConsoleMaxLines has nonsensical value, defaulting to" << maxLines;
+    }
+    return maxLines;
+}
+
+bool shouldStopOnConsoleOverflow(SettingsObject* settings)
+{
+    return settings->get("ConsoleOverflowStop").toBool();
+}
+
+BaseInstance::BaseInstance(SettingsObject* globalSettings, std::unique_ptr<SettingsObject> settings, const QString& rootDir) : QObject()
+{
+    m_settings = std::move(settings);
     m_global_settings = globalSettings;
     m_rootDir = rootDir;
 
@@ -69,6 +88,7 @@ BaseInstance::BaseInstance(SettingsObjectPtr globalSettings, SettingsObjectPtr s
     m_settings->registerSetting("lastTimePlayed", 0);
 
     m_settings->registerSetting("linkedInstances", "[]");
+    m_settings->registerSetting("shortcuts", QString());
 
     // Game time override
     auto gameTimeOverride = m_settings->registerSetting("OverrideGameTime", false);
@@ -106,6 +126,8 @@ BaseInstance::BaseInstance(SettingsObjectPtr globalSettings, SettingsObjectPtr s
 
     m_settings->registerSetting("Profiler", "");
 }
+
+BaseInstance::~BaseInstance() {}
 
 QString BaseInstance::getPreLaunchCommand()
 {
@@ -174,46 +196,35 @@ void BaseInstance::copyManagedPack(BaseInstance& other)
     m_settings->set("ManagedPackName", other.getManagedPackName());
     m_settings->set("ManagedPackVersionID", other.getManagedPackVersionID());
     m_settings->set("ManagedPackVersionName", other.getManagedPackVersionName());
-}
 
-int BaseInstance::getConsoleMaxLines() const
-{
-    auto lineSetting = m_settings->getSetting("ConsoleMaxLines");
-    bool conversionOk = false;
-    int maxLines = lineSetting->get().toInt(&conversionOk);
-    if (!conversionOk) {
-        maxLines = lineSetting->defValue().toInt();
-        qWarning() << "ConsoleMaxLines has nonsensical value, defaulting to" << maxLines;
+    if (APPLICATION->settings()->get("AutomaticJavaSwitch").toBool() && m_settings->get("AutomaticJava").toBool() &&
+        m_settings->get("OverrideJavaLocation").toBool()) {
+        m_settings->set("OverrideJavaLocation", false);
+        m_settings->set("JavaPath", "");
     }
-    return maxLines;
-}
-
-bool BaseInstance::shouldStopOnConsoleOverflow() const
-{
-    return m_settings->get("ConsoleOverflowStop").toBool();
 }
 
 QStringList BaseInstance::getLinkedInstances() const
 {
-    return m_settings->get("linkedInstances").toStringList();
+    auto setting = m_settings->get("linkedInstances").toString();
+    return Json::toStringList(setting);
 }
 
 void BaseInstance::setLinkedInstances(const QStringList& list)
 {
-    auto linkedInstances = m_settings->get("linkedInstances").toStringList();
-    m_settings->set("linkedInstances", list);
+    m_settings->set("linkedInstances", Json::fromStringList(list));
 }
 
 void BaseInstance::addLinkedInstanceId(const QString& id)
 {
-    auto linkedInstances = m_settings->get("linkedInstances").toStringList();
+    auto linkedInstances = getLinkedInstances();
     linkedInstances.append(id);
     setLinkedInstances(linkedInstances);
 }
 
 bool BaseInstance::removeLinkedInstanceId(const QString& id)
 {
-    auto linkedInstances = m_settings->get("linkedInstances").toStringList();
+    auto linkedInstances = getLinkedInstances();
     int numRemoved = linkedInstances.removeAll(id);
     setLinkedInstances(linkedInstances);
     return numRemoved > 0;
@@ -221,7 +232,7 @@ bool BaseInstance::removeLinkedInstanceId(const QString& id)
 
 bool BaseInstance::isLinkedToInstanceId(const QString& id) const
 {
-    auto linkedInstances = m_settings->get("linkedInstances").toStringList();
+    auto linkedInstances = getLinkedInstances();
     return linkedInstances.contains(id);
 }
 
@@ -327,11 +338,11 @@ QString BaseInstance::instanceRoot() const
     return m_rootDir;
 }
 
-SettingsObjectPtr BaseInstance::settings()
+SettingsObject* BaseInstance::settings()
 {
     loadSpecificSettings();
 
-    return m_settings;
+    return m_settings.get();
 }
 
 bool BaseInstance::canLaunch() const
@@ -386,6 +397,63 @@ void BaseInstance::setName(QString val)
     emit propertiesChanged(this);
 }
 
+bool BaseInstance::syncInstanceDirName(const QString& newRoot) const
+{
+    auto oldRoot = instanceRoot();
+    return oldRoot == newRoot || QFile::rename(oldRoot, newRoot);
+}
+
+void BaseInstance::registerShortcut(const ShortcutData& data)
+{
+    auto currentShortcuts = shortcuts();
+    currentShortcuts.append(data);
+    qDebug() << "Registering shortcut for instance" << id() << "with name" << data.name << "and path" << data.filePath;
+    setShortcuts(currentShortcuts);
+}
+
+void BaseInstance::setShortcuts(const QList<ShortcutData>& shortcuts)
+{
+    // FIXME: if no change, do not set. setting involves saving a file.
+    QJsonArray array;
+    for (const auto& elem : shortcuts) {
+        array.append(QJsonObject{ { "name", elem.name }, { "filePath", elem.filePath }, { "target", static_cast<int>(elem.target) } });
+    }
+
+    QJsonDocument document;
+    document.setArray(array);
+    m_settings->set("shortcuts", QString::fromUtf8(document.toJson(QJsonDocument::Compact)));
+}
+
+QList<ShortcutData> BaseInstance::shortcuts() const
+{
+    auto data = m_settings->get("shortcuts").toString().toUtf8();
+    QJsonParseError parseError;
+    auto document = QJsonDocument::fromJson(data, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isArray())
+        return {};
+
+    QList<ShortcutData> results;
+    for (const auto& elem : document.array()) {
+        if (!elem.isObject())
+            continue;
+        auto dict = elem.toObject();
+        if (!dict.contains("name") || !dict.contains("filePath") || !dict.contains("target"))
+            continue;
+        int value = dict["target"].toInt(-1);
+        if (!dict["name"].isString() || !dict["filePath"].isString() || value < 0 || value >= 3)
+            continue;
+
+        QString shortcutName = dict["name"].toString();
+        QString filePath = dict["filePath"].toString();
+        if (!QDir(filePath).exists()) {
+            qWarning() << "Shortcut" << shortcutName << "for instance" << name() << "have non-existent path" << filePath;
+            continue;
+        }
+        results.append({ shortcutName, filePath, static_cast<ShortcutTarget>(value) });
+    }
+    return results;
+}
+
 QString BaseInstance::name() const
 {
     return m_settings->get("name").toString();
@@ -402,12 +470,17 @@ QStringList BaseInstance::extraArguments()
     return Commandline::splitArgs(settings()->get("JvmArgs").toString());
 }
 
-shared_qobject_ptr<LaunchTask> BaseInstance::getLaunchTask()
+LaunchTask* BaseInstance::getLaunchTask()
 {
-    return m_launchProcess;
+    return m_launchProcess.get();
 }
 
 void BaseInstance::updateRuntimeContext()
 {
     // NOOP
+}
+
+bool BaseInstance::isLegacy()
+{
+    return traits().contains("legacyLaunch") || traits().contains("alphaLaunch");
 }

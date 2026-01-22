@@ -8,16 +8,14 @@
 
 #include "ShaderPackModel.h"
 
+#include "Application.h"
 #include "ui/dialogs/ResourceDownloadDialog.h"
 
 #include <QRegularExpression>
 
 namespace ResourceDownload {
 
-ShaderPackResourcePage::ShaderPackResourcePage(ShaderPackDownloadDialog* dialog, BaseInstance& instance) : ResourcePage(dialog, instance)
-{
-    connect(m_ui->packView, &QListView::doubleClicked, this, &ShaderPackResourcePage::onResourceSelected);
-}
+ShaderPackResourcePage::ShaderPackResourcePage(ShaderPackDownloadDialog* dialog, BaseInstance& instance) : ResourcePage(dialog, instance) {}
 
 /******** Callbacks to events in the UI (set up in the derived classes) ********/
 
@@ -46,12 +44,10 @@ QMap<QString, QString> ShaderPackResourcePage::urlHandlers() const
 
 void ShaderPackResourcePage::addResourceToPage(ModPlatform::IndexedPack::Ptr pack,
                                                ModPlatform::IndexedVersion& version,
-                                               const std::shared_ptr<ResourceFolderModel> base_model)
+                                               ResourceFolderModel* base_model)
 {
-    QString custom_target_folder;
-    if (version.loaders & ModPlatform::Cauldron)
-        custom_target_folder = QStringLiteral("resourcepacks");
-    m_model->addPack(pack, version, base_model, false, custom_target_folder);
+    bool is_indexed = !APPLICATION->settings()->get("ModMetadataDisabled").toBool();
+    m_model->addPack(pack, version, base_model, is_indexed);
 }
 
 }  // namespace ResourceDownload

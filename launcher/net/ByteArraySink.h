@@ -45,7 +45,7 @@ namespace Net {
  */
 class ByteArraySink : public Sink {
    public:
-    ByteArraySink(std::shared_ptr<QByteArray> output) : m_output(output) {};
+    ByteArraySink(QByteArray* output) : m_output(output) {}
 
     virtual ~ByteArraySink() = default;
 
@@ -58,6 +58,7 @@ class ByteArraySink : public Sink {
             qWarning() << "ByteArraySink did not initialize the buffer because it's not addressable";
         if (initAllValidators(request))
             return Task::State::Running;
+        m_fail_reason = "Failed to initialize validators";
         return Task::State::Failed;
     };
 
@@ -69,12 +70,14 @@ class ByteArraySink : public Sink {
             qWarning() << "ByteArraySink did not write the buffer because it's not addressable";
         if (writeAllValidators(data))
             return Task::State::Running;
+        m_fail_reason = "Failed to write validators";
         return Task::State::Failed;
     }
 
     auto abort() -> Task::State override
     {
         failAllValidators();
+        m_fail_reason = "Aborted";
         return Task::State::Failed;
     }
 
@@ -82,12 +85,13 @@ class ByteArraySink : public Sink {
     {
         if (finalizeAllValidators(reply))
             return Task::State::Succeeded;
+        m_fail_reason = "Failed to finalize validators";
         return Task::State::Failed;
     }
 
     auto hasLocalData() -> bool override { return false; }
 
-   private:
-    std::shared_ptr<QByteArray> m_output;
+   protected:
+    QByteArray* m_output;
 };
 }  // namespace Net

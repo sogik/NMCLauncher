@@ -39,7 +39,7 @@
 #include <QMainWindow>
 #include <QString>
 
-#include <Application.h>
+#include "BaseInstance.h"
 #include "ui/pages/BasePage.h"
 
 #include "settings/Setting.h"
@@ -56,14 +56,14 @@ class ServersPage : public QMainWindow, public BasePage {
     Q_OBJECT
 
    public:
-    explicit ServersPage(InstancePtr inst, QWidget* parent = 0);
+    explicit ServersPage(BaseInstance* inst, QWidget* parent = 0);
     virtual ~ServersPage();
 
     void openedImpl() override;
     void closedImpl() override;
 
     virtual QString displayName() const override { return tr("Servers"); }
-    virtual QIcon icon() const override { return APPLICATION->getThemedIcon("server"); }
+    virtual QIcon icon() const override { return QIcon::fromTheme("server"); }
     virtual QString id() const override { return "servers"; }
     virtual QString helpPage() const override { return "Servers-management"; }
     void retranslate() override;
@@ -85,6 +85,7 @@ class ServersPage : public QMainWindow, public BasePage {
     void on_actionMove_Up_triggered();
     void on_actionMove_Down_triggered();
     void on_actionJoin_triggered();
+    void on_actionRefresh_triggered();
 
     void runningStateChanged(bool running);
 
@@ -99,7 +100,7 @@ class ServersPage : public QMainWindow, public BasePage {
     bool m_locked = true;
     Ui::ServersPage* ui = nullptr;
     ServersModel* m_model = nullptr;
-    InstancePtr m_inst = nullptr;
+    BaseInstance* m_inst = nullptr;
 
     std::shared_ptr<Setting> m_wide_bar_setting = nullptr;
 };

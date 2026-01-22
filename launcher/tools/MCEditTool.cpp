@@ -8,7 +8,7 @@
 #include "minecraft/MinecraftInstance.h"
 #include "settings/SettingsObject.h"
 
-MCEditTool::MCEditTool(SettingsObjectPtr settings)
+MCEditTool::MCEditTool(SettingsObject* settings)
 {
     settings->registerSetting("MCEditPath");
     m_settings = settings;
@@ -45,7 +45,7 @@ bool MCEditTool::check(const QString& toolPath, QString& error)
 
 QString MCEditTool::getProgramPath()
 {
-#ifdef Q_OS_OSX
+#ifdef Q_OS_MACOS
     return path();
 #else
     const QString mceditPath = path();

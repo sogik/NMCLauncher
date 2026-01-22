@@ -70,7 +70,6 @@ jobs:
             ' <<< "$PR_JSON")"
           } >> "$GITHUB_ENV"
 
-
       - name: Find Blocked/Stacked PRs in body
         id: pr_ids
         run: |
@@ -252,4 +251,3 @@ jobs:
             --body "$COMMENT_BODY" \
             --create-if-none \
             --edit-last
-

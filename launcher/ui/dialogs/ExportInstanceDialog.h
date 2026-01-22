@@ -43,7 +43,6 @@
 #include "FileIgnoreProxy.h"
 
 class BaseInstance;
-using InstancePtr = std::shared_ptr<BaseInstance>;
 
 namespace Ui {
 class ExportInstanceDialog;
@@ -53,22 +52,20 @@ class ExportInstanceDialog : public QDialog {
     Q_OBJECT
 
    public:
-    explicit ExportInstanceDialog(InstancePtr instance, QWidget* parent = 0);
+    explicit ExportInstanceDialog(BaseInstance* instance, QWidget* parent = 0);
     ~ExportInstanceDialog();
 
     virtual void done(int result);
 
    private:
     void doExport();
-    void loadPackIgnore();
-    void savePackIgnore();
     QString ignoreFileName();
 
    private:
-    Ui::ExportInstanceDialog* ui;
-    InstancePtr m_instance;
-    FileIgnoreProxy* proxyModel;
-    FastFileIconProvider icons;
+    Ui::ExportInstanceDialog* m_ui;
+    BaseInstance* m_instance;
+    FileIgnoreProxy* m_proxyModel;
+    FastFileIconProvider m_icons;
 
    private slots:
     void rowsInserted(QModelIndex parent, int top, int bottom);

@@ -45,7 +45,9 @@
 
 #include "net/ApiDownload.h"
 
-AtlOptionalModListModel::AtlOptionalModListModel(QWidget* parent, ATLauncher::PackVersion version, QVector<ATLauncher::VersionMod> mods)
+AtlOptionalModListModel::AtlOptionalModListModel(QWidget* parent,
+                                                 const ATLauncher::PackVersion& version,
+                                                 QList<ATLauncher::VersionMod> mods)
     : QAbstractListModel(parent), m_version(version), m_mods(mods)
 {
     // fill mod index
@@ -62,9 +64,9 @@ AtlOptionalModListModel::AtlOptionalModListModel(QWidget* parent, ATLauncher::Pa
     }
 }
 
-QVector<QString> AtlOptionalModListModel::getResult()
+QList<QString> AtlOptionalModListModel::getResult()
 {
-    QVector<QString> result;
+    QList<QString> result;
 
     for (const auto& mod : m_mods) {
         if (m_selection[mod.name]) {
@@ -157,7 +159,7 @@ void AtlOptionalModListModel::useShareCode(const QString& code)
 {
     m_jobPtr.reset(new NetJob("Atl::Request", APPLICATION->network()));
     auto url = QString(BuildConfig.ATL_API_BASE_URL + "share-codes/" + code);
-    m_jobPtr->addNetAction(Net::ApiDownload::makeByteArray(QUrl(url), m_response));
+    m_jobPtr->addNetAction(Net::ApiDownload::makeByteArray(QUrl(url), m_response.get()));
 
     connect(m_jobPtr.get(), &NetJob::succeeded, this, &AtlOptionalModListModel::shareCodeSuccess);
     connect(m_jobPtr.get(), &NetJob::failed, this, &AtlOptionalModListModel::shareCodeFailure);
@@ -233,7 +235,7 @@ void AtlOptionalModListModel::clearAll()
     emit dataChanged(AtlOptionalModListModel::index(0, EnabledColumn), AtlOptionalModListModel::index(m_mods.size() - 1, EnabledColumn));
 }
 
-void AtlOptionalModListModel::toggleMod(ATLauncher::VersionMod mod, int index)
+void AtlOptionalModListModel::toggleMod(const ATLauncher::VersionMod& mod, int index)
 {
     auto enable = !m_selection[mod.name];
 
@@ -251,7 +253,7 @@ void AtlOptionalModListModel::toggleMod(ATLauncher::VersionMod mod, int index)
     setMod(mod, index, enable);
 }
 
-void AtlOptionalModListModel::setMod(ATLauncher::VersionMod mod, int index, bool enable, bool shouldEmit)
+void AtlOptionalModListModel::setMod(const ATLauncher::VersionMod& mod, int index, bool enable, bool shouldEmit)
 {
     if (m_selection[mod.name] == enable)
         return;
@@ -313,7 +315,7 @@ void AtlOptionalModListModel::setMod(ATLauncher::VersionMod mod, int index, bool
     }
 }
 
-AtlOptionalModDialog::AtlOptionalModDialog(QWidget* parent, ATLauncher::PackVersion version, QVector<ATLauncher::VersionMod> mods)
+AtlOptionalModDialog::AtlOptionalModDialog(QWidget* parent, const ATLauncher::PackVersion& version, QList<ATLauncher::VersionMod> mods)
     : QDialog(parent), ui(new Ui::AtlOptionalModDialog)
 {
     ui->setupUi(this);

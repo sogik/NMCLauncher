@@ -78,6 +78,7 @@ class AccountList : public QAbstractListModel {
 
     void addAccount(MinecraftAccountPtr account);
     void removeAccount(QModelIndex index);
+    void moveAccount(QModelIndex index, int delta);
     int findAccountByProfileId(const QString& profileId) const;
     MinecraftAccountPtr getAccountByProfileName(const QString& profileName) const;
     QStringList profileNames() const;
@@ -111,7 +112,6 @@ class AccountList : public QAbstractListModel {
     void endActivity();
 
    private:
-    const char* m_name;
     uint32_t m_activityCount = 0;
    signals:
     void listChanged();

@@ -62,7 +62,7 @@ class UserInteractionSupport {
     /**
      * Requests a user interaction to select which optional mods should be installed.
      */
-    virtual std::optional<QVector<QString>> chooseOptionalMods(PackVersion version, QVector<ATLauncher::VersionMod> mods) = 0;
+    virtual std::optional<QList<QString>> chooseOptionalMods(const PackVersion& version, QList<ATLauncher::VersionMod> mods) = 0;
 
     /**
      * Requests a user interaction to select a component version from a given version list
@@ -105,10 +105,10 @@ class PackInstallTask : public InstanceTask {
    private:
     QString getDirForModType(ModType type, QString raw);
     QString getVersionForLoader(QString uid);
-    QString detectLibrary(VersionLibrary library);
+    QString detectLibrary(const VersionLibrary& library);
 
-    bool createLibrariesComponent(QString instanceRoot, std::shared_ptr<PackProfile> profile);
-    bool createPackComponent(QString instanceRoot, std::shared_ptr<PackProfile> profile);
+    bool createLibrariesComponent(QString instanceRoot, PackProfile* profile);
+    bool createPackComponent(QString instanceRoot, PackProfile* profile);
 
     void deleteExistingFiles();
     void installConfigs();
@@ -125,7 +125,7 @@ class PackInstallTask : public InstanceTask {
     bool abortable = false;
 
     NetJob::Ptr jobPtr;
-    std::shared_ptr<QByteArray> response = std::make_shared<QByteArray>();
+    std::unique_ptr<QByteArray> response = std::make_unique<QByteArray>();
 
     InstallMode m_install_mode;
     QString m_pack_name;

@@ -107,7 +107,7 @@ MSAStep::MSAStep(AccountData* data, bool silent) : AuthStep(data), m_silent(sile
     m_oauth2.setAccessTokenUrl(QUrl("https://login.microsoftonline.com/consumers/oauth2/v2.0/token"));
     m_oauth2.setScope("XboxLive.SignIn XboxLive.offline_access");
     m_oauth2.setClientIdentifier(m_clientId);
-    m_oauth2.setNetworkAccessManager(APPLICATION->network().get());
+    m_oauth2.setNetworkAccessManager(APPLICATION->network());
 
     connect(&m_oauth2, &QOAuth2AuthorizationCodeFlow::granted, this, [this] {
         m_data->msaClientID = m_oauth2.clientIdentifier();
@@ -116,7 +116,7 @@ MSAStep::MSAStep(AccountData* data, bool silent) : AuthStep(data), m_silent(sile
         m_data->msaToken.extra = m_oauth2.extraTokens();
         m_data->msaToken.refresh_token = m_oauth2.refreshToken();
         m_data->msaToken.token = m_oauth2.token();
-        emit finished(AccountTaskState::STATE_WORKING, tr("Got "));
+        emit finished(AccountTaskState::STATE_WORKING, tr("Got MSA token"));
     });
     connect(&m_oauth2, &QOAuth2AuthorizationCodeFlow::authorizeWithBrowser, this, &MSAStep::authorizeWithBrowser);
     connect(&m_oauth2, &QOAuth2AuthorizationCodeFlow::requestFailed, this, [this, silent](const QAbstractOAuth2::Error err) {
@@ -168,13 +168,8 @@ void MSAStep::perform()
         m_oauth2.setRefreshToken(m_data->msaToken.refresh_token);
         m_oauth2.refreshAccessToken();
     } else {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)  // QMultiMap param changed in 6.0
         m_oauth2.setModifyParametersFunction(
             [](QAbstractOAuth::Stage stage, QMultiMap<QString, QVariant>* map) { map->insert("prompt", "select_account"); });
-#else
-        m_oauth2.setModifyParametersFunction(
-            [](QAbstractOAuth::Stage stage, QMap<QString, QVariant>* map) { map->insert("prompt", "select_account"); });
-#endif
 
         *m_data = AccountData();
         m_data->msaClientID = m_clientId;

@@ -22,10 +22,7 @@
 #include "LocalShaderPackParseTask.h"
 
 #include "FileSystem.h"
-
-#include <quazip/quazip.h>
-#include <quazip/quazipdir.h>
-#include <quazip/quazipfile.h>
+#include "archive/ArchiveReader.h"
 
 namespace ShaderPackUtils {
 
@@ -63,24 +60,40 @@ bool processZIP(ShaderPack& pack, ProcessingLevel level)
 {
     Q_ASSERT(pack.type() == ResourceType::ZIPFILE);
 
-    QuaZip zip(pack.fileinfo().filePath());
-    if (!zip.open(QuaZip::mdUnzip))
+    MMCZip::ArchiveReader zip(pack.fileinfo().filePath());
+    if (!zip.collectFiles(false))
         return false;  // can't open zip file
 
-    QuaZipFile file(&zip);
+    if (!zip.exists("/shaders")) {
+        // assets dir does not exists at zip root, but shader packs
+        // will sometimes be a zip file containing a folder with the
+        // actual contents in it. This happens
+        // e.g. when the shader pack is downloaded as code
+        // from Github. so other than "/shaders", we
+        // could also check for a "shaders" folder one level deep.
 
-    QuaZipDir zipDir(&zip);
-    if (!zipDir.exists("/shaders")) {
-        return false;  // assets dir does not exists at zip root
+        QStringList files = zip.getFiles();
+
+        // the assumption here is that there is just one
+        // folder with the "shader" subfolder. In case
+        // there are multiple, the first one is picked.
+        bool isShaderPresent = false;
+        for (QString f : files) {
+            if (f.contains("/shaders/", Qt::CaseInsensitive)) {
+                isShaderPresent = true;
+                break;
+            }
+        }
+
+        if (!isShaderPresent)
+            // assets dir does not exist.
+            return false;
     }
     pack.setPackFormat(ShaderPackFormat::VALID);
 
     if (level == ProcessingLevel::BasicInfoOnly) {
-        zip.close();
         return true;  // only need basic info already checked
     }
-
-    zip.close();
 
     return true;
 }

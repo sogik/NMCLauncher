@@ -11,6 +11,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       build-type: Release
+      environment: Release
     secrets: inherit
 
   create_release:
@@ -20,12 +21,12 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: "true"
           path: "NMCLauncher-source"
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
       - name: Grab and store version
         run: |
           tag_name=$(echo ${{ github.ref }} | grep -oE "[^/]+$")
@@ -34,6 +35,7 @@ jobs:
         run: |
           mv ${{ github.workspace }}/NMCLauncher-source NMCLauncher-${{ env.VERSION }}
           mv NMCLauncher-Linux-Qt6-Portable*/NMCLauncher-portable.tar.gz NMCLauncher-Linux-Qt6-Portable-${{ env.VERSION }}.tar.gz
+          mv NMCLauncher-Linux-aarch64-Qt6-Portable*/NMCLauncher-portable.tar.gz NMCLauncher-Linux-aarch64-Qt6-Portable-${{ env.VERSION }}.tar.gz
           mv NMCLauncher-*.AppImage/NMCLauncher-*-x86_64.AppImage NMCLauncher-Linux-x86_64.AppImage
           mv NMCLauncher-*.AppImage.zsync/NMCLauncher-*-x86_64.AppImage.zsync NMCLauncher-Linux-x86_64.AppImage.zsync
           mv NMCLauncher-*.AppImage/NMCLauncher-*-aarch64.AppImage NMCLauncher-Linux-aarch64.AppImage
@@ -51,17 +53,6 @@ jobs:
             NAME="NMCLauncher-Windows-MSVC"
             test -z "${LEGACY}" || NAME="${NAME}-Legacy"
             test -z "${ARM64}" || NAME="${NAME}-arm64"
-            test -z "${PORT}" || NAME="${NAME}-Portable"
-            test -z "${INST}" || mv NMCLauncher-*.exe ../${NAME}-Setup-${{ env.VERSION }}.exe
-            test -n "${INST}" || zip -r -9 "../${NAME}-${{ env.VERSION }}.zip" *
-            cd ..
-          done
-
-          for d in NMCLauncher-Windows-Clang*; do
-            cd "${d}" || continue
-            INST="$(echo -n ${d} | grep -o Setup || true)"
-            PORT="$(echo -n ${d} | grep -o Portable || true)"
-            NAME="NMCLauncher-Windows-Clang"
             test -z "${PORT}" || NAME="${NAME}-Portable"
             test -z "${INST}" || mv NMCLauncher-*.exe ../${NAME}-Setup-${{ env.VERSION }}.exe
             test -n "${INST}" || zip -r -9 "../${NAME}-${{ env.VERSION }}.zip" *
@@ -96,9 +87,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ github.ref }}
-          name: v${{ env.VERSION }}
+          name: NMC Launcher ${{ env.VERSION }}
           draft: true
           prerelease: false
+          fail_on_unmatched_files: true
           files: |
             NMCLauncher-Linux-x86_64.AppImage
             NMCLauncher-Linux-x86_64.AppImage.zsync
@@ -118,8 +110,5 @@ jobs:
             NMCLauncher-Windows-MSVC-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC-Portable-${{ env.VERSION }}.zip
             NMCLauncher-Windows-MSVC-Setup-${{ env.VERSION }}.exe
-            NMCLauncher-Windows-Clang-${{ env.VERSION }}.zip
-            NMCLauncher-Windows-Clang-Portable-${{ env.VERSION }}.zip
-            NMCLauncher-Windows-Clang-Setup-${{ env.VERSION }}.exe
             NMCLauncher-macOS-${{ env.VERSION }}.zip
             NMCLauncher-${{ env.VERSION }}.tar.gz

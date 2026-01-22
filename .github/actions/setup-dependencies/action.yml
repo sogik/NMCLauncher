@@ -1,5 +1,5 @@
 name: Setup Dependencies
-description: Install and setup dependencies for building NMC Launcher
+description: Install and setup dependencies for building Prism Launcher
 
 inputs:
   build-type:
@@ -21,7 +21,6 @@ inputs:
   qt-version:
     description: Version of Qt to use
     required: true
-    default: 6.8.1
 
 outputs:
   build-type:
@@ -42,6 +41,8 @@ runs:
     - name: Setup macOS dependencies
       if: ${{ runner.os == 'macOS' }}
       uses: ./.github/actions/setup-dependencies/macos
+      with:
+        build-type: ${{ inputs.build-type }}
 
     - name: Setup Windows dependencies
       if: ${{ runner.os == 'Windows' }}
@@ -54,7 +55,7 @@ runs:
     # TODO(@getchoo): Get this working on MSYS2!
     - name: Setup ccache
       if: ${{ (runner.os != 'Windows' || inputs.msystem == '') && inputs.build-type == 'Debug' }}
-      uses: hendrikmuhs/ccache-action@v1.2.18
+      uses: hendrikmuhs/ccache-action@v1.2.20
       with:
         variant: sccache
         create-symlink: ${{ runner.os != 'Windows' }}
@@ -76,6 +77,5 @@ runs:
       with:
         aqtversion: "==3.1.*"
         version: ${{ inputs.qt-version }}
-        arch: ${{ inputs.qt-architecture }}
-        modules: qt5compat qtimageformats qtnetworkauth
+        modules: qtimageformats qtnetworkauth
         cache: ${{ inputs.build-type == 'Debug' }}
