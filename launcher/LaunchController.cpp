@@ -263,18 +263,29 @@ void LaunchController::login()
 
                 }
 
-                if (m_accountToUse->ownsMinecraft()) {
+                                if (m_accountToUse->ownsMinecraft()) {
 
-                    if (!m_accountToUse->hasProfile()) {
-                    ProfileSetupDialog dialog(m_accountToUse, m_parentWidget);
-                    if (dialog.exec() == QDialog::Accepted) {
-                        tryagain = true;
-                        continue;
-                    } else {
-                        emitFailed(tr("Received undetermined session status during login."));
-                        return;
-                    }
-                }
+                                    if (!m_accountToUse->hasProfile()) {
+
+                                        ProfileSetupDialog dialog(m_accountToUse, m_parentWidget);
+
+                                        if (dialog.exec() == QDialog::Accepted) {
+
+                                            tryagain = true;
+
+                                            continue;
+
+                                        } else {
+
+                                            emitFailed(tr("Received undetermined session status during login."));
+
+                                            return;
+
+                                        }
+
+                                    }
+
+                                }
 
                 if (m_accountToUse->accountType() == AccountType::Offline)
                     m_session->wants_online = false;
@@ -286,7 +297,7 @@ void LaunchController::login()
             case AccountState::Errored:
                 // This means some sort of soft error that we can fix with a refresh ... so let's refresh.
             case AccountState::Unchecked: {
-                accountToCheck->refresh();
+                m_accountToUse->refresh();
             }
             /* fallthrough */
             case AccountState::Working: {
@@ -294,7 +305,7 @@ void LaunchController::login()
                 ProgressDialog progDialog(m_parentWidget);
                 progDialog.setSkipButton(true, tr("Abort"));
 
-                auto task = accountToCheck->currentTask();
+                auto task = m_accountToUse->currentTask();
                 progDialog.execWithTask(task.get());
 
                 // don't retry if aborted
@@ -304,13 +315,13 @@ void LaunchController::login()
                 continue;
             }
             case AccountState::Expired: {
-                if (reauthenticateAccount(accountToCheck))
+                if (reauthenticateAccount(m_accountToUse))
                     continue;
                 return;
             }
             case AccountState::Disabled: {
                 auto errorString = tr("The launcher's client identification has changed. Please remove '%1' and try again.")
-                                       .arg(accountToCheck->profileName());
+                                       .arg(m_accountToUse->profileName());
 
                 QMessageBox::warning(m_parentWidget, tr("Client identification changed"), errorString, QMessageBox::StandardButton::Ok,
                                      QMessageBox::StandardButton::Ok);
@@ -321,7 +332,7 @@ void LaunchController::login()
                 auto errorString =
                     tr("'%1' no longer exists on the servers. It may have been migrated, in which case please add the new account "
                        "you migrated this one to.")
-                        .arg(accountToCheck->profileName());
+                        .arg(m_accountToUse->profileName());
                 QMessageBox::warning(m_parentWidget, tr("Account gone"), errorString, QMessageBox::StandardButton::Ok,
                                      QMessageBox::StandardButton::Ok);
                 emitFailed(errorString);
