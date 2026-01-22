@@ -25,6 +25,9 @@ if command -v "inkscape" && command -v "icotool" && command -v "oxipng"; then
 
     oxipng --opt max --strip all --alpha --interlace 0 "$d/nmclauncher_"*".png"
 
+    # Save the 256x256 PNG for Linux packaging
+    cp -v "$d/nmclauncher_256.png" "${LAUNCHER_APPID}_256.png"
+
     rm nmclauncher.ico && icotool -o nmclauncher.ico -c \
         "$d/nmclauncher_256.png"  \
         "$d/nmclauncher_128.png"  \

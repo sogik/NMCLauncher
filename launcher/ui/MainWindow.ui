@@ -773,9 +773,9 @@
    </property>
   </action>
   <action name="actionThemes">
-   <property name="text">
-    <string>Themes</string>
-   </property>
+   <property name="icon">
+ <iconset theme="appearance"/>
+</property>
   </action>
  </widget>
  <customwidgets>

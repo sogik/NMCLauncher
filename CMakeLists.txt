@@ -169,7 +169,7 @@ endif()
 ######## Set URLs ########
 set(Launcher_NEWS_RSS_URL "https://github.com/sogik/NMCLauncher/releases.atom" CACHE STRING "URL to fetch Launcher's news feed from.")
 set(Launcher_NEWS_OPEN_URL "https://github.com/sogik/NMCLauncher/releases" CACHE STRING "URL that gets opened when the user clicks 'More News'")
-set(Launcher_HELP_URL "https://prismlauncher.org/wiki/help-pages/%1" CACHE STRING "URL (with arg %1 to be substituted with page-id) that gets opened when the user requests help")
+set(Launcher_HELP_URL "https://prismlauncher.org/wiki/overview/troubleshooting/" CACHE STRING "URL (with arg %1 to be substituted with page-id) that gets opened when the user requests help")
 set(Launcher_LOGIN_CALLBACK_URL "https://prismlauncher.org/successful-login" CACHE STRING "URL that gets opened when the user successfully logins.")
 set(Launcher_FMLLIBS_BASE_URL "https://files.prismlauncher.org/fmllibs/" CACHE STRING "URL for FML Libraries.")
 
@@ -413,7 +413,7 @@ if(UNIX AND APPLE)
                 COMMAND ${ACTOOL_EXE} "${ICON_SOURCE}"
                         --compile "${ASSETS_OUT_DIR}"
                         --output-partial-info-plist /dev/null
-                        --app-icon PrismLauncher
+                        --app-icon NMCLauncher
                         --enable-on-demand-resources NO
                         --target-device mac
                         --minimum-deployment-target ${CMAKE_OSX_DEPLOYMENT_TARGET}
