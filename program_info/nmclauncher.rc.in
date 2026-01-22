@@ -15,10 +15,10 @@ BEGIN
         BEGIN
                 BLOCK "000004b0"
                 BEGIN
-                        VALUE "CompanyName", "MultiMC & Prism Launcher & PollyMC Contributors"
-                        VALUE "FileDescription", "NMC Launcher"
+                        VALUE "CompanyName", "MultiMC & Prism Launcher & sogik Contributors"
+                        VALUE "FileDescription", "@Launcher_DisplayName@"
                         VALUE "FileVersion", "@Launcher_VERSION_NAME4@"
-                        VALUE "ProductName", "NMC Launcher"
+                        VALUE "ProductName", "@Launcher_DisplayName@"
                         VALUE "ProductVersion", "@Launcher_VERSION_NAME4@"
                 END
         END
@@ -27,3 +27,4 @@ BEGIN
                 VALUE "Translation", 0x0000, 0x04b0 // Unicode
         END
 END
+
