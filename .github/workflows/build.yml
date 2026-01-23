@@ -146,6 +146,7 @@ jobs:
 
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.macosx-deployment-target }}
       CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+      MSA_CLIENT_ID: ${{ secrets.MSA_CLIENT_ID }}
 
     steps:
       ##

@@ -776,6 +776,9 @@
    <property name="icon">
  <iconset theme="appearance"/>
 </property>
+   <property name="text">
+    <string>Themes</string>
+   </property>
   </action>
  </widget>
  <customwidgets>
